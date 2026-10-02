@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EEF2F3">
+<title>XYRON CAM · Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#10202B; --muted:#5E6E78; --line:#DCE4E8; --bg:#EEF2F3;
+  --teal:#14B3A5; --teal-ink:#0A7C73; --teal-soft:#DDF3F0; --bezel:#1A2227;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
+
+.layout{display:grid;grid-template-columns:330px 1fr;height:100vh;height:100dvh}
+.panel{padding:40px 32px;display:flex;flex-direction:column;gap:28px;border-right:1px solid var(--line);background:#F7F9FA;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.02em}
+.brand svg{width:26px;height:26px}
+.intro{font-size:15px;line-height:1.55;color:var(--muted);max-width:30ch}
+.intro b{color:var(--ink);font-weight:700}
+#menu{display:flex;flex-direction:column;gap:16px}
+.group h3{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.group ul{list-style:none;display:flex;flex-direction:column;gap:2px}
+.group button{all:unset;box-sizing:border-box;width:100%;padding:9px 12px;border-radius:10px;font-size:14.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px}
+.group button::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+.group button:hover{background:#ECF1F3}
+.group button[aria-current="page"]{background:var(--teal-soft);color:var(--teal-ink)}
+.group button[aria-current="page"]::before{background:var(--teal)}
+.group button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.tip{margin-top:auto;font-size:13px;line-height:1.5;color:var(--muted);padding:14px;border-radius:14px;background:#fff;border:1px solid var(--line)}
+.reset{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;color:var(--teal-ink)}
+.reset:focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:4px}
+
+.stage{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 35%, #F9FBFC 0%, var(--bg) 70%)}
+.box{position:relative}
+.phone{position:absolute;top:0;left:0;width:418px;height:872px;padding:14px;border-radius:62px;background:var(--bezel);
+  transform-origin:0 0;box-shadow:0 50px 90px -40px rgba(16,32,43,.55),inset 0 0 0 1px rgba(255,255,255,.07)}
+.screen{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:#fff}
+.screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;opacity:0;transition:opacity .28s ease}
+.screen iframe.on{opacity:1;z-index:2}
+.loader{position:absolute;inset:0;display:grid;place-items:center;z-index:1}
+.loader i{width:34px;height:34px;border-radius:50%;border:3px solid var(--teal-soft);border-top-color:var(--teal);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{position:absolute;left:50%;bottom:110px;transform:translate(-50%,16px);z-index:10;opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:14px;font-weight:600;padding:12px 18px;border-radius:14px;max-width:340px;text-align:center;
+  transition:opacity .25s, transform .25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .panel{display:none}
+}
+@media (max-width:500px){
+  body{background:#fff}
+  .stage{background:#fff}
+  .box{width:100vw!important;height:100vh!important;height:100dvh!important}
+  .phone{position:static;width:100%;height:100%;padding:0;border-radius:0;box-shadow:none;background:#fff;transform:none!important}
+  .screen{width:100%;height:100%;border-radius:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .screen iframe,.toast{transition:none}
+  .loader i{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="panel">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M5 5l14 14" stroke="#10202B"/><path d="M19 5L5 19" stroke="#14B3A5"/>
+      </svg>
+      XYRON CAM
+    </div>
+    <p class="intro">Prototipo navegable de la app. <b>Toca la app</b> como si fuera tu celular o salta a cualquier vista desde aquí.</p>
+    <nav id="menu" aria-label="Vistas del prototipo"></nav>
+    <div class="tip">En la pantalla de inicio, toca la campana para simular la llegada de una alerta de dron.<br><br>
+      <button class="reset" id="reset">Reiniciar recorrido</button></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="box" id="box">
+      <div class="phone" id="phone">
+        <div class="screen" id="screen">
+          <div class="loader"><i></i></div>
+          <iframe title="Vista de la app XYRON CAM"></iframe>
+          <iframe title="Vista de la app XYRON CAM" aria-hidden="true"></iframe>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const VIEWS = [
+  ["Acceso", [["login","Inicio de sesión"]]],
+  ["Inicio", [["inicio","Sin amenazas"],["notificacion","Notificación"],["alerta","Dron detectado"]]],
+  ["Alerta", [["detalle","Detalle de alerta"],["reporte","Reportar incidente"],["falso-positivo","Falso positivo"]]],
+  ["Historial", [["historial","Con eventos"],["historial-vacio","Sin incidentes"]]],
+  ["Cuenta", [["ajustes","Ajustes"],["perfil","Perfil"]]]
+];
+const TITLES = Object.fromEntries(VIEWS.flatMap(g => g[1]));
+const frames = [...document.querySelectorAll("#screen iframe")];
+let front = 0, current = null, alertMode = false, swapTimer = null, toastTimer = null;
+
+const menu = document.getElementById("menu");
+menu.innerHTML = VIEWS.map(([g, items]) =>
+  `<div class="group"><h3>${g}</h3><ul>${items.map(([id, t]) =>
+    `<li><button data-go="${id}">${t}</button></li>`).join("")}</ul></div>`).join("");
+menu.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]");
+  if (b) navigate(b.dataset.go);
+});
+document.getElementById("reset").addEventListener("click", () => { alertMode = false; navigate("login"); });
+
+function navigate(to) {
+  if (to === "@home") to = alertMode ? "alerta" : "inicio";
+  if (to === "alerta") alertMode = true;
+  if (to === "login" || to === "inicio") alertMode = false;
+  if (location.hash !== "#/" + to) location.hash = "/" + to;
+  else load(to);
+}
+
+// Carga la vista en el iframe oculto y lo muestra cuando avisa que ya se pintó
+function load(id) {
+  if (!TITLES[id]) id = "login";
+  if (id === current) return;
+  current = id;
+  document.title = "XYRON CAM · " + TITLES[id];
+  menu.querySelectorAll("[data-go]").forEach(b =>
+    b.dataset.go === id ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  const back = frames[1 - front];
+  back.dataset.view = id;
+  back.src = "screens/" + id + ".html";
+  clearTimeout(swapTimer);
+  swapTimer = setTimeout(() => swap(id), 4000);
+}
+
+function swap(id) {
+  const back = frames[1 - front];
+  if (back.dataset.view !== id || back.classList.contains("on")) return;
+  clearTimeout(swapTimer);
+  back.classList.add("on"); back.removeAttribute("aria-hidden");
+  const old = frames[front];
+  old.classList.remove("on"); old.setAttribute("aria-hidden", "true");
+  front = 1 - front;
+  setTimeout(() => { if (!old.classList.contains("on")) old.src = "about:blank"; }, 350);
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+window.addEventListener("message", e => {
+  const d = e.data;
+  if (!d || !d.xyron) return;
+  if (d.ready) {
+    const back = frames[1 - front];
+    if (e.source === back.contentWindow) swap(d.ready);
+    return;
+  }
+  if (e.source !== frames[front].contentWindow) return;
+  if (d.toast) toast(d.toast);
+  if (d.to) navigate(d.to);
+});
+
+window.addEventListener("hashchange", () => load(location.hash.replace("#/", "")));
+
+function fit() {
+  if (innerWidth <= 500) return;
+  const stage = document.getElementById("stage").getBoundingClientRect();
+  const s = Math.min(1, (stage.height - 48) / 872, (stage.width - 48) / 418);
+  const box = document.getElementById("box");
+  box.style.width = 418 * s + "px";
+  box.style.height = 872 * s + "px";
+  document.getElementById("phone").style.transform = `scale(${s})`;
+}
+addEventListener("resize", fit);
+fit();
+load(location.hash.replace("#/", "") || "login");
+</script>
+</body>
+</html>
