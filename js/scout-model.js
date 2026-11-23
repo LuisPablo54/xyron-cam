@@ -44,33 +44,29 @@ export async function createScout() {
   return prepareRig(gltf.scene);
 }
 
-const luminance = (color) => 0.3 * color.r + 0.59 * color.g + 0.11 * color.b;
+const SHELL_MATERIAL = 'ASA blanco';
+const TRIM_MATERIAL = 'ASA grafito';
 
-function styleMaterial(partName, source, cache, rig) {
+// Respeto los materiales de la escena de Blender y solo corrijo lo que glTF no conserva.
+function styleMaterial(source, cache, rig) {
   if (cache.has(source)) return cache.get(source);
   let material;
-  if (partName.startsWith('C01_ventana')) {
-    material = new THREE.MeshPhysicalMaterial({ color: 0x0b1218, roughness: 0.04, transparent: true, opacity: 0.2, depthWrite: false, envMapIntensity: 1.6 });
-  } else if (partName.startsWith('C02_lente_vidrio')) {
+  if (source.name === 'Policarbonato UV') {
+    material = new THREE.MeshPhysicalMaterial({ color: 0x0b1218, roughness: 0.04, transparent: true, opacity: 0.18, depthWrite: false, envMapIntensity: 1.6 });
+  } else if (source.name === 'Lente con recubrimiento') {
     material = new THREE.MeshPhysicalMaterial({ color: 0x0d2233, roughness: 0.03, metalness: 0.3, clearcoat: 1, envMapIntensity: 2.2 });
-  } else if (partName.startsWith('01c_led')) {
+  } else if (source.name.startsWith('ASA')) {
+    material = new THREE.MeshPhysicalMaterial({ color: source.color.clone(), roughness: 0.45, clearcoat: source.name === SHELL_MATERIAL ? 0.4 : 0.15, clearcoatRoughness: 0.35 });
+  } else {
     material = source.clone();
+  }
+  if (source.name.startsWith('LED')) {
     material.emissiveIntensity = 3;
     material.toneMapped = false;
     rig.led = material;
-  } else {
-    const color = source.color.clone();
-    const light = luminance(color);
-    if (light > 0.5) {
-      material = new THREE.MeshPhysicalMaterial({ color, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.3 });
-      rig.shell.push({ material, original: color.clone() });
-    } else if (light < 0.12) {
-      material = new THREE.MeshStandardMaterial({ color, roughness: 0.36, metalness: 0.55 });
-      rig.trim.push({ material, original: color.clone() });
-    } else {
-      material = new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.15 });
-    }
   }
+  if (source.name === SHELL_MATERIAL) rig.shell.push({ material, original: material.color.clone() });
+  if (source.name === TRIM_MATERIAL) rig.trim.push({ material, original: material.color.clone() });
   cache.set(source, material);
   return material;
 }
@@ -92,7 +88,7 @@ function prepareRig(root) {
       if (!child.isMesh) return;
       child.castShadow = true;
       child.receiveShadow = true;
-      child.material = styleMaterial(node.name, child.material, cache, rig);
+      child.material = styleMaterial(child.material, cache, rig);
     });
   });
   return rig;
