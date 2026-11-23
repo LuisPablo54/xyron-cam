@@ -5,8 +5,8 @@ const SPECS = [
   ['Movimiento', [['Giro (pan)', '±90° (mecánica preparada para ±135°)'], ['Inclinación (tilt)', 'De −10° a +90°'], ['Modo', 'Patrullaje y seguimiento automático']]],
   ['Detección', [['Radio', 'Actividad en 2.4 GHz'], ['Visión', 'Detector de drones con IA (YOLO)'], ['Clases', 'Distingue drones de aves']]],
   ['Cámara y procesamiento', [['Sensor', '12.3 MP'], ['Lente', 'Telefoto de 16 mm'], ['Procesamiento', 'Local, con acelerador de IA']]],
-  ['Materiales', [['Cuerpo', 'Aluminio 6061 con pintura electrostática blanca (producción)'], ['Cabeza y tapas', 'ASA / PC-ASA con estabilizador UV'], ['Aro y brida', 'Aluminio anodizado grafito'], ['Ventana', 'Policarbonato con filtro UV y capa antirrayas']]],
-  ['Sellado y conexiones', [['Juntas', 'Junta perimetral fuera de la línea de tornillos'], ['Ventilación', 'Válvula ePTFE M12 y sílica gel'], ['Cables', 'Prensacables IP68 PG7 y PG9'], ['Indicador', 'Barra LED de estado al frente']]],
+  ['Materiales', [['Cabeza y tapas', 'ASA / PC-ASA con estabilizador UV'], ['Ventana', 'Policarbonato con filtro UV y capa antirrayas']]],
+  ['Sellado y conexiones', [['Juntas', 'Junta perimetral fuera de la línea de tornillos'], ['Ventilación', 'Válvula ePTFE M12 y sílica gel'], ['Cables', 'Prensacables IP68 PG7 y PG9']]],
 ];
 
 const FAQ = [
@@ -26,30 +26,13 @@ const LAZY_MODULES = [
 ];
 
 function renderAccordions() {
-  const row = ([label, value]) => `<div><small>${label}</small><b>${value}</b></div>`;
+  const row = ([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
   document.getElementById('specacc').innerHTML = SPECS
-    .map(([title, rows], i) => `<details${i < 2 ? ' open' : ''}><summary>${title}</summary><div class="dl">${rows.map(row).join('')}</div></details>`)
+    .map(([title, rows]) => `<section><h3>${title}</h3><dl>${rows.map(row).join('')}</dl></section>`)
     .join('');
   document.getElementById('faqacc').innerHTML = FAQ
     .map(([question, answer]) => `<details><summary>${question}</summary><p>${answer}</p></details>`)
     .join('');
-}
-
-function setupExpandAll() {
-  const button = document.getElementById('expall');
-  const items = () => [...document.querySelectorAll('#specacc details')];
-  const sync = () => {
-    const allOpen = items().every((item) => item.open);
-    button.textContent = allOpen ? 'Contraer todo' : 'Expandir todo';
-    button.setAttribute('aria-expanded', String(allOpen));
-  };
-  button.addEventListener('click', () => {
-    const open = !items().every((item) => item.open);
-    items().forEach((item) => { item.open = open; });
-    sync();
-  });
-  items().forEach((item) => item.addEventListener('toggle', sync));
-  sync();
 }
 
 function setupTabs() {
@@ -119,7 +102,6 @@ function setupLazyModules() {
 }
 
 renderAccordions();
-setupExpandAll();
 setupTabs();
 setupContact();
 setupHeroVideo();

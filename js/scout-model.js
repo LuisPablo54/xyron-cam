@@ -1,13 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { MODEL_URL } from './config.js';
+import { MODEL_URL, COLORS } from './config.js';
 
-export const COLORS = [
-  { name: 'Blanco ártico', swatch: '#f3f4f5', shell: null, trim: null },
-  { name: 'Grafito', swatch: '#3b3f45', shell: '#3d4148', trim: '#141619' },
-  { name: 'Arena', swatch: '#d8ccb9', shell: '#d6cab6', trim: '#5d544a' },
-];
+export { COLORS };
 
 const EXPECTED_BYTES = 2.8e6;
 const progressListeners = new Set();
