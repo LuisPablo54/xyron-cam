@@ -39,18 +39,13 @@
 </div>
 
 <header class="hero" id="top">
- <div id="hs" aria-label="Escena 3D: XYRON CAM Scout en una azotea siguiendo a un dron sobre la calle">
-  <div class="loadbar" id="hl">Cargando escena<div><i id="hli"></i></div></div>
-  <div class="lock" id="lock"><b></b><span>Dron · seguimiento</span></div>
-  <div class="hud" id="hud"><div class="fr"></div><div class="x"></div><div class="tl"><i></i>REC · Cámara Scout · 16 mm</div><div class="tr" id="hudr">Pan 0° · Tilt 0°</div></div>
- </div>
+ <div id="hs" aria-hidden="true"><video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="img/hero-poster.jpg"><source src="videos/hero.mp4" type="video/mp4"></video></div>
  <div class="copy">
-  <div class="chip" id="chip"><i></i>Escaneando el cielo</div>
+  <div class="chip live"><i></i>Dron detectado · siguiendo</div>
   <h1>Tu cielo, protegido.</h1>
   <p>XYRON CAM Scout vigila el cielo sobre tu casa o empresa. Detecta drones, los sigue con su cámara y te manda la alerta con evidencia lista para denunciar.</p>
   <div class="cta"><a class="btn dark" href="#simulador">Probar el simulador</a><a class="btn ghost" href="#diseno">Explorar en 3D</a></div>
  </div>
- <div class="seg" role="group" aria-label="Cambiar vista"><button type="button" id="vExt" aria-pressed="true">Vista exterior</button><button type="button" id="vCam" aria-pressed="false">Vista de la cámara</button></div>
  <div class="cta mcta"><a class="btn dark" href="#simulador">Probar el simulador</a><a class="btn ghost" href="#diseno">Explorar en 3D</a></div>
 </header>
 
@@ -84,7 +79,7 @@
 <section class="band" id="simulador">
  <div class="wrap">
   <h2>Simula un sobrevuelo.</h2>
-  <p class="lead" style="margin-top:16px">Elige un escenario y mira cómo Scout escucha la radio del dron, lo busca con la cámara, lo confirma con IA y empieza a grabar. Si pasa un ave, la descarta sin alertarte.</p>
+  <p class="lead" style="margin-top:16px">Elige un escenario y mira cómo Scout escucha la radio del dron, lo busca con la cámara, lo confirma con IA y empieza a grabar. Si pasa un ave, la identifica, la ignora y sigue vigilando. Alcance de la simulación: 200 m.</p>
   <div class="sim">
    <div class="simv" id="simv">
     <div class="banner" id="sb" data-s="idle"><i></i><span id="sbt">Patrullando el cielo</span><time id="sbtime"></time></div>
@@ -106,8 +101,8 @@
     </div>
     <div class="manual" id="manual" hidden>
      <div class="ctl"><label for="mAz">Dirección <output id="mAzv">0°</output></label><input id="mAz" type="range" min="-180" max="180" value="20"></div>
-     <div class="ctl"><label for="mDist">Distancia <output id="mDistv">40 m</output></label><input id="mDist" type="range" min="10" max="120" value="40"></div>
-     <div class="ctl"><label for="mAlt">Altura <output id="mAltv">30 m</output></label><input id="mAlt" type="range" min="5" max="80" value="30"></div>
+     <div class="ctl"><label for="mDist">Distancia <output id="mDistv">60 m</output></label><input id="mDist" type="range" min="10" max="200" value="60"></div>
+     <div class="ctl"><label for="mAlt">Altura <output id="mAltv">40 m</output></label><input id="mAlt" type="range" min="5" max="200" value="40"></div>
      <p class="note" style="margin:0">También puedes tocar el radar para mover el dron.</p>
     </div>
     <canvas class="radar" id="radar" width="640" height="640" aria-label="Radar: vista desde arriba con Scout al centro"></canvas>
@@ -152,7 +147,7 @@
     <div class="views" id="views" role="group" aria-label="Vista del modelo"></div>
     <div class="cap"><h3 id="ct"></h3><p id="cd"></p></div>
     <div class="ctl"><label for="ex">Explosionado <output id="exv">0 %</output></label><input id="ex" type="range" min="0" max="100" value="0"></div>
-    <p class="note" style="margin:0">Render en tiempo real con materiales aproximados. Grafito y Arena son colores de concepto.</p>
+    <p class="note" style="margin:0">Render en tiempo real con materiales aproximados. Blanco ártico es el color de producción porque refleja más sol y ayuda a mantener fresco el interior; Grafito y Arena son colores de concepto.</p>
    </div>
   </div>
  </div>
@@ -216,7 +211,7 @@
 <section class="band" id="cobertura" style="background:var(--panel)">
  <div class="wrap">
   <h2>¿Cuántas Scout necesitas?</h2>
-  <p class="lead" style="margin-top:16px">Dibuja tu terreno y calcula cuántos equipos harían falta para vigilar el cielo encima de él. Cada Scout gira ±90°, así que cubre un abanico hacia donde apunta; el cálculo las acomoda para cubrir todo el terreno.</p>
+  <p class="lead" style="margin-top:16px">Dibuja tu terreno y calcula cuántos equipos harían falta para vigilar el cielo encima de él. Cada Scout vigila 360° a su alrededor; el cálculo las acomoda dentro del terreno para no dejar huecos.</p>
   <div class="cov">
    <div class="covf">
     <div class="chips" id="covPre" role="group" aria-label="Ejemplos de terreno">
@@ -286,7 +281,7 @@
  <div class="wrap">
   <a class="logo" href="#top"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#fff"/><path d="M8 8l12 12M20 8L8 20" stroke="#19b8ec" stroke-width="3" stroke-linecap="round"/></svg>XYRON CAM</a>
   <p>León, Guanajuato, México · Prototipo en desarrollo · <a data-contact href="#contacto">Contacto</a></p>
-  <p style="flex-basis:100%;font-size:13px;color:#8f98a2">Escenas generadas por computadora en tiempo real. XYRON CAM detecta y registra; no interfiere con drones.</p>
+  <p style="flex-basis:100%;font-size:13px;color:#8f98a2">Escenas generadas por computadora. XYRON CAM detecta y registra; no interfiere con drones.</p>
  </div>
 </footer>
 

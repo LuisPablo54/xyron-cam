@@ -4,19 +4,20 @@ Sitio estático de XYRON CAM Scout. Se publica con GitHub Pages; no necesita ser
 
 | Ruta | Qué es |
 |---|---|
-| `index.html` | Página: portada 3D, simulador, visor, videos, demo de la app, cobertura, especificaciones, contacto |
+| `index.html` | Página: portada en video, simulador, visor, videos, demo de la app, cobertura, especificaciones, contacto |
 | `css/site.css` | Estilos |
 | `js/config.js` | **Enlace del formulario de contacto** y límites del equipo |
 | `js/main.js` | Acordeones, pestañas, videos, contacto y carga diferida de cada sección |
 | `js/scout-model.js` | Carga del GLB, materiales, rig (PAN/TILT), explosionado y colores |
-| `js/hero.js`, `js/studio.js` | Portada 3D y visor de estudio |
+| `js/studio.js` | Visor de estudio |
 | `js/simulator.js` | Simulador de detección (radio → IA → alerta) |
 | `js/coverage.js` | Calculadora de cobertura |
 | `js/app-demo.js` | Demo navegable de la app (usa `screens/`) |
 | `js/city.js` | Fraccionamiento, dron y ave procedurales |
 | `models/scout_v4.glb` | Modelo con rig, comprimido con meshopt (2.7 MB) |
-| `videos/`, `img/` | Videos de incidentes, pósters e imagen para redes |
+| `videos/`, `img/` | Video de portada, videos de incidentes, pósters e imagen para redes |
 | `tools/build_model.py` | Arma el rig a partir del GLB exportado de CAD |
+| `tools/hero-capture.html` | Escena de la portada con tiempo controlado, para grabar `videos/hero.mp4` |
 | `prototipo-app.html` | Prototipo de la app a pantalla completa |
 
 ## Formulario de contacto
@@ -36,6 +37,22 @@ npx @gltf-transform/cli meshopt scout_rig.glb models/scout_v4.glb
 ```
 
 Si cambian los nombres de las piezas en CAD, actualiza `PAN_PARTS`, `TILT_PARTS` y `EXPLODE_BY_PREFIX` en el script.
+
+## Regenerar el video de portada
+
+La portada usa un video en bucle (`videos/hero.mp4`, 24 s) en lugar de 3D en vivo, para que no se trabe en equipos lentos. Se graba desde `tools/hero-capture.html`: la página expone `window.renderAt(t, fps)`; `tools/capture-hero.js` (Playwright) pide los cuadros en orden (t = 0 … 24 s), toma una captura de cada uno y ffmpeg los une. Con el sitio servido en el puerto 8000:
+
+```bash
+node tools/capture-hero.js frames
+```
+
+Después, dentro de `frames/`:
+
+```bash
+ffmpeg -framerate 30 -i f%04d.jpg -c:v libx264 -crf 24 -preset slow -pix_fmt yuv420p -movflags +faststart ../videos/hero.mp4
+```
+
+Todos los movimientos de la escena completan ciclos exactos en 24 s, así que el video se repite sin salto.
 
 ## Probar en local
 
