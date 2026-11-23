@@ -14,10 +14,11 @@ Sitio estático de XYRON CAM Scout. Se publica con GitHub Pages; no necesita ser
 | `js/coverage.js` | Calculadora de cobertura |
 | `js/app-demo.js` | Demo navegable de la app (usa `screens/`) |
 | `js/city.js` | Fraccionamiento, dron y ave procedurales |
-| `models/scout_v4.glb` | Modelo con rig, comprimido con meshopt (2.7 MB) |
+| `models/scout_v4.glb` | Scout exportada de la escena de Blender, con rig y comprimida con meshopt (2.1 MB) |
 | `videos/`, `img/` | Video de portada, videos de incidentes, pósters e imagen para redes |
-| `tools/build_model.py` | Arma el rig a partir del GLB exportado de CAD |
-| `tools/hero-capture.html` | Escena de la portada con tiempo controlado, para grabar `videos/hero.mp4` |
+| `tools/export_scout.py` | Exporta la Scout de la escena de Blender para la web |
+| `tools/build_model.py` | Tabla de explosionado; también arma el rig desde un GLB de CAD |
+| `tools/render_hero.py`, `tools/overlay_hero.py` | Render del video de portada desde la escena de Blender |
 | `prototipo-app.html` | Prototipo de la app a pantalla completa |
 
 ## Formulario de contacto
@@ -29,30 +30,26 @@ Mientras esté vacío, el botón muestra "El formulario estará disponible muy p
 
 ## Regenerar el modelo 3D
 
-El GLB de CAD viene en milímetros, con Z hacia arriba y sin articulaciones. El script agrupa las piezas en `PAN` y `TILT`, convierte a metros con Y hacia arriba y agrega los vectores de explosionado (`extras.ex`). Después se comprime:
+El modelo de la web sale de la escena de Blender `XYRON_Scout_v4_escena.blend` (no está en el repo), que ya trae los pivotes `PAN` y `TILT` y los materiales finales. `tools/export_scout.py` exporta solo la Scout: la pasa a metros, la deja en el origen mirando al frente, endereza el grupo de piezas fijas y agrega los vectores de explosionado (`extras.ex`, definidos en `tools/build_model.py`). Después se comprime:
 
 ```bash
-python3 tools/build_model.py xyron_cam_scout_v4.glb scout_rig.glb
-npx @gltf-transform/cli meshopt scout_rig.glb models/scout_v4.glb
+blender -b -P tools/export_scout.py -- XYRON_Scout_v4_escena.blend scout_blend.glb
+npx @gltf-transform/cli meshopt scout_blend.glb models/scout_v4.glb
 ```
 
-Si cambian los nombres de las piezas en CAD, actualiza `PAN_PARTS`, `TILT_PARTS` y `EXPLODE_BY_PREFIX` en el script.
+El primer comando exporta la Scout desde Blender y el segundo la comprime con meshopt (8.3 MB → 2.1 MB). `tools/build_model.py` también sirve para armar el rig desde un GLB de CAD sin articulaciones.
 
 ## Regenerar el video de portada
 
-La portada usa un video en bucle (`videos/hero.mp4`, 24 s) en lugar de 3D en vivo, para que no se trabe en equipos lentos. Se graba desde `tools/hero-capture.html`: la página expone `window.renderAt(t, fps)`; `tools/capture-hero.js` (Playwright) pide los cuadros en orden (t = 0 … 24 s), toma una captura de cada uno y ffmpeg los une. Con el sitio servido en el puerto 8000:
+La portada usa un video en bucle (`videos/hero.mp4`, 8 s) renderizado con Cycles desde la escena de Blender `XYRON_Scout_v4_escena.blend` (no está en el repo). `tools/render_hero.py` abre la escena, agrega un dron con una trayectoria periódica, hace que los pivotes `PAN` y `TILT` de la Scout lo sigan y renderiza los 192 cuadros; `tools/overlay_hero.py` dibuja el recuadro de seguimiento.
 
 ```bash
-node tools/capture-hero.js frames
+blender -b XYRON_Scout_v4_escena.blend -P tools/render_hero.py -- XYRON_Scout_v4_escena.blend cuadros
+python tools/overlay_hero.py cuadros cuadros/final
+ffmpeg -framerate 24 -i cuadros/final/o%04d.png -c:v libx264 -crf 23 -preset slow -pix_fmt yuv420p -movflags +faststart videos/hero.mp4
 ```
 
-Después, dentro de `frames/`:
-
-```bash
-ffmpeg -framerate 30 -i f%04d.jpg -c:v libx264 -crf 24 -preset slow -pix_fmt yuv420p -movflags +faststart ../videos/hero.mp4
-```
-
-Todos los movimientos de la escena completan ciclos exactos en 24 s, así que el video se repite sin salto.
+El primer comando renderiza (unos 30 s por cuadro en CPU de 4 núcleos), el segundo agrega el recuadro y el tercero une los cuadros en el video. La trayectoria del dron se repite exactamente cada 192 cuadros, así que el video no tiene salto.
 
 ## Probar en local
 
