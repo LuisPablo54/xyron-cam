@@ -79,7 +79,7 @@
 <section class="band" id="simulador">
  <div class="wrap">
   <h2>Simula un sobrevuelo.</h2>
-  <p class="lead" style="margin-top:16px">Elige un escenario y mira cómo Scout escucha la radio del dron, lo busca con la cámara, lo confirma con IA y empieza a grabar. Si pasa un ave, la identifica, la ignora y sigue vigilando. Alcance de la simulación: 200 m.</p>
+  <p class="lead" style="margin-top:16px">Elige un escenario y mira cómo Scout escucha la radio del dron, lo busca con la cámara, lo confirma con IA y empieza a grabar. Si pasa un ave, la identifica, la ignora y sigue vigilando. La radio identifica el enlace del dron hasta 150 m; la simulación llega a 200 m.</p>
   <div class="sim">
    <div class="simv" id="simv">
     <div class="banner" id="sb" data-s="idle"><i></i><span id="sbt">Patrullando el cielo</span><time id="sbtime"></time></div>
@@ -106,6 +106,11 @@
      <p class="note" style="margin:0">También puedes tocar el radar para mover el dron.</p>
     </div>
     <canvas class="radar" id="radar" width="640" height="640" aria-label="Radar: vista desde arriba con Scout al centro"></canvas>
+    <div>
+     <p class="h4">Espectro de radio 2.4 GHz</p>
+     <canvas class="spectrum" id="spectrum" width="800" height="300" aria-label="Histograma de señales en la banda de 2.4 GHz; la señal del dron se marca en rojo"></canvas>
+     <p class="note" style="margin:6px 0 0" id="specNote">Barrido de escucha: busca el enlace de control del dron hasta 150 m.</p>
+    </div>
     <div class="readout">
      <div><small>Pan</small><b id="rPan">0°</b></div>
      <div><small>Tilt</small><b id="rTilt">0°</b></div>
@@ -121,33 +126,35 @@
     </div>
    </div>
   </div>
-  <p class="note">Simulación ilustrativa: distancias, tiempos y comportamiento son aproximados y no son especificaciones del equipo. El giro de la maqueta respeta el rango del prototipo (pan ±90°, tilt de −10° a +90°).</p>
+  <p class="note">Simulación ilustrativa: distancias, tiempos y comportamiento son aproximados y no son especificaciones del equipo. El giro de la maqueta respeta el rango del prototipo (pan ±90°, tilt de −10° a +90°). El barrido de radio es pasivo: Scout escucha, no emite ni interfiere.</p>
  </div>
 </section>
 
 <section class="band" id="diseno" style="background:var(--panel)">
  <div class="wrap">
   <h2>Míralo desde todos los ángulos.</h2>
-  <p class="lead" style="margin-top:16px">Este es el modelo CAD real de la Scout v4. Gíralo, acércate al lente o ábrelo para ver cómo está hecho por dentro.</p>
+  <p class="lead" style="margin-top:16px">Este es el modelo real de la Scout v4. Gíralo en la foto de 360° o cambia al 3D interactivo para ver cómo se mueve y cómo está hecha por dentro.</p>
   <div class="studio">
    <div class="sv" id="sv">
-    <div class="ld" id="sld">Cargando modelo…</div>
+    <div class="spin" id="spin"><img id="spinImg" alt="Scout v4 en estudio, vista de 360°" draggable="false"></div>
+    <div class="ld" id="sld">Cargando vista 360°…</div>
     <div class="tools">
      <button class="ibtn" type="button" id="btnSpin" aria-pressed="false" aria-label="Girar automáticamente" title="Girar automáticamente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
      <button class="ibtn" type="button" id="btnReset" aria-label="Restablecer vista" title="Restablecer vista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
      <button class="ibtn" type="button" id="btnFull" aria-label="Pantalla completa" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
-    <div class="hint">Arrastra para girar · rueda o pellizco para acercar</div>
+    <div class="hint" id="svHint">Arrastra para girar 360°</div>
    </div>
    <div class="side">
+    <div class="chips" role="group" aria-label="Tipo de vista"><button type="button" id="modePhoto" aria-pressed="true">Foto 360°</button><button type="button" id="mode3d" aria-pressed="false">3D interactivo</button></div>
     <div>
      <p class="lbl">Color: <b id="cname">Blanco ártico</b></p>
      <div class="sw" id="sw" role="group" aria-label="Color" style="margin-top:12px"></div>
     </div>
-    <div class="views" id="views" role="group" aria-label="Vista del modelo"></div>
-    <div class="cap"><h3 id="ct"></h3><p id="cd"></p></div>
-    <div class="ctl"><label for="ex">Explosionado <output id="exv">0 %</output></label><input id="ex" type="range" min="0" max="100" value="0"></div>
-    <p class="note" style="margin:0">Render en tiempo real con materiales aproximados. Blanco ártico es el color de producción porque refleja más sol y ayuda a mantener fresco el interior; Grafito y Arena son colores de concepto.</p>
+    <div class="views" id="views" role="group" aria-label="Vista del modelo" hidden></div>
+    <div class="cap"><h3 id="ct">Diseño limpio para cualquier fachada</h3><p id="cd">Cuerpo blanco y aro oscuro, pensada para verse bien en una azotea, no para esconderse.</p></div>
+    <div class="ctl" id="exCtl" hidden><label for="ex">Explosionado <output id="exv">0 %</output></label><input id="ex" type="range" min="0" max="100" value="0"></div>
+    <p class="note" style="margin:0" id="svNote">Render fotorrealista de la Scout v4 con sus materiales. Blanco ártico es el color de producción porque refleja más sol y ayuda a mantener fresco el interior; Arena es un color de concepto.</p>
    </div>
   </div>
  </div>
@@ -157,13 +164,17 @@
  <div class="wrap">
   <h2>Así se registra un incidente.</h2>
   <p class="lead" style="margin-top:16px">Pruebas del software de detección sobre grabaciones de vuelos reales: primero aparece un objeto, la IA lo verifica y, si es un dron, se dispara la alerta y empieza la grabación del incidente. El recuadro de la esquina simula el acercamiento de la cámara.</p>
-  <div class="vids">
-   <figure class="vid"><video src="videos/incidente-01.mp4" poster="img/incidente-01.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 1 · 14 s</b><span>Verificación, alerta y grabación de un dron entre nubes.</span></figcaption></figure>
-   <figure class="vid"><video src="videos/incidente-02.mp4" poster="img/incidente-02.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 2 · 23 s</b><span>Seguimiento continuo de un dron sobre campo abierto.</span></figcaption></figure>
-   <figure class="vid"><video src="videos/incidente-03.mp4" poster="img/incidente-03.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 3 · 5 s</b><span>Detección inicial de un objeto nuevo y confirmación como dron.</span></figcaption></figure>
-   <figure class="vid"><video src="videos/incidente-04.mp4" poster="img/incidente-04.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 4 · 6 s</b><span>Despegue y aterrizaje de un DJI Phantom con cielo nublado.</span></figcaption></figure>
+  <div class="incidents">
+   <article class="incident">
+    <figure class="vid"><video src="videos/incidente-01.mp4" poster="img/incidente-01.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 1 · 14 s</b><span>Verificación, alerta y grabación de un dron entre nubes.</span></figcaption></figure>
+    <figure class="vid report"><a href="img/reporte-01.webp" target="_blank" rel="noopener"><img src="img/reporte-01.webp" width="1252" height="674" loading="lazy" alt="Reporte del incidente 1: detección inicial a 1.0 s, alarma a 3.6 s, tomas de verificación con la probabilidad de dron y trayectoria en la imagen."></a><figcaption><b>Reporte del incidente 1</b><span>Detección a 1.0 s, alarma a 3.6 s tras 6 tomas de verificación. Toca para ampliar.</span></figcaption></figure>
+   </article>
+   <article class="incident">
+    <figure class="vid"><video src="videos/incidente-02.mp4" poster="img/incidente-02.jpg" controls muted playsinline preload="none"></video><figcaption><b>Incidente 2 · 23 s</b><span>Seguimiento continuo de un dron sobre campo abierto.</span></figcaption></figure>
+    <figure class="vid report"><a href="img/reporte-02.webp" target="_blank" rel="noopener"><img src="img/reporte-02.webp" width="1252" height="674" loading="lazy" alt="Reporte del incidente 2: detección inicial a 2.0 s, alarma a 3.7 s, tomas de verificación con la probabilidad de dron y trayectoria en la imagen."></a><figcaption><b>Reporte del incidente 2</b><span>Detección a 2.0 s, alarma a 3.7 s tras 3 tomas de verificación. Toca para ampliar.</span></figcaption></figure>
+   </article>
   </div>
-  <p class="note">Las marcas en pantalla vienen de una simulación del sistema sobre video grabado; no son capturas de un equipo Scout instalado.</p>
+  <p class="note">Las marcas en pantalla y los reportes vienen de una simulación del sistema sobre video grabado; no son capturas de un equipo Scout instalado.</p>
  </div>
 </section>
 
@@ -210,49 +221,21 @@
 
 <section class="band" id="cobertura" style="background:var(--panel)">
  <div class="wrap">
-  <h2>¿Cuántas Scout necesitas?</h2>
-  <p class="lead" style="margin-top:16px">Dibuja tu terreno y calcula cuántos equipos harían falta para vigilar el cielo encima de él. Cada Scout vigila 360° a su alrededor; el cálculo las acomoda dentro del terreno para no dejar huecos.</p>
-  <div class="cov">
-   <div class="covf">
-    <div class="chips" id="covPre" role="group" aria-label="Ejemplos de terreno">
-     <button type="button" data-w="15" data-l="30" aria-pressed="true">Casa</button>
-     <button type="button" data-w="60" data-l="120" aria-pressed="false">Nave industrial</button>
-     <button type="button" data-w="250" data-l="350" aria-pressed="false">Fraccionamiento</button>
-    </div>
-    <div class="ctl"><label for="cW">Ancho del terreno <output id="cWv">15 m</output></label><input id="cW" type="range" min="10" max="500" step="5" value="15"></div>
-    <div class="ctl"><label for="cL">Largo del terreno <output id="cLv">30 m</output></label><input id="cL" type="range" min="10" max="500" step="5" value="30"></div>
-    <div class="ctl"><label for="cH">Altura de vuelo a vigilar <output id="cHv">40 m</output></label><input id="cH" type="range" min="10" max="120" step="5" value="40"></div>
-    <div class="ctl"><label for="cR">Alcance supuesto por equipo <output id="cRv">100 m</output></label><input id="cR" type="range" min="40" max="300" step="10" value="100"></div>
-    <p class="optics" id="optics"></p>
-   </div>
-   <div>
-    <canvas class="covmap" id="covmap" width="1040" height="780" aria-label="Mapa del terreno con la cobertura de cada Scout"></canvas>
-    <div class="result">
-     <div><small>Scout necesarias</small><b id="oN">1</b></div>
-     <div><small>Terreno cubierto</small><b id="oCov">100 %</b></div>
-     <div><small>Radio útil a esa altura</small><b id="oR">92 m</b></div>
-    </div>
-   </div>
+  <h2>Así cubre el cielo de tu terreno.</h2>
+  <p class="lead" style="margin-top:16px">Cada Scout vigila 360° a su alrededor. Con un alcance de 150 m y un dron volando a 50 m de altura, cubre un círculo de unos 141 m de radio. Estos son tres ejemplos.</p>
+  <div class="covx">
+   <figure class="covcard"><canvas width="640" height="640" data-w="15" data-l="30" aria-label="Casa de 15 × 30 m cubierta por una Scout"></canvas><figcaption><b>Casa</b><span data-out>15 × 30 m</span></figcaption></figure>
+   <figure class="covcard"><canvas width="640" height="640" data-w="60" data-l="120" aria-label="Nave industrial de 60 × 120 m cubierta por una Scout"></canvas><figcaption><b>Nave industrial</b><span data-out>60 × 120 m</span></figcaption></figure>
+   <figure class="covcard"><canvas width="640" height="640" data-w="250" data-l="350" aria-label="Fraccionamiento de 250 × 350 m y las Scout necesarias"></canvas><figcaption><b>Fraccionamiento</b><span data-out>250 × 350 m</span></figcaption></figure>
   </div>
-  <p class="note">Estimación geométrica. El alcance por equipo es un supuesto que tú ajustas: el alcance real de Scout se medirá en las pruebas piloto y depende del dron, el clima y los obstáculos.</p>
- </div>
-</section>
-
-<section class="band">
- <div class="wrap">
-  <h2>Un cielo que vale la pena cuidar.</h2>
-  <div class="who">
-   <article class="card" style="background:var(--panel)"><h3>Casas</h3><p>Privacidad para tu familia, tu patio y tu alberca. Sabes cuándo alguien mira desde arriba.</p></article>
-   <article class="card" style="background:var(--panel)"><h3>Empresas</h3><p>Naves, bodegas y patios de maniobra: registra sobrevuelos que buscan rutinas o accesos.</p></article>
-   <article class="card" style="background:var(--panel)"><h3>Fraccionamientos</h3><p>Varias Scout coordinadas cubren áreas comunes y avisan a la caseta de vigilancia.</p></article>
-  </div>
+  <p class="note">Estimación geométrica con un alcance supuesto de 150 m; el alcance real se medirá en las pruebas piloto y depende del dron, el clima y los obstáculos.</p>
  </div>
 </section>
 
 <section class="band" id="specs" style="background:var(--panel)">
  <div class="wrap">
-  <div class="shead"><h2>Especificaciones</h2><button class="btn ghost" id="expall" type="button" aria-expanded="false">Expandir todo</button></div>
-  <div class="acc" id="specacc"></div>
+  <h2>Especificaciones</h2>
+  <div class="specs" id="specacc"></div>
   <p class="note">Especificaciones de diseño del prototipo Scout v4; pueden cambiar en la versión comercial.</p>
  </div>
 </section>

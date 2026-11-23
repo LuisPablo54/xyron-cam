@@ -6,7 +6,16 @@ import { createScout, aimRig } from './scout-model.js';
 import { createRenderer, watchSize, runWhenVisible } from './renderer.js';
 import { PAN_LIMIT_DEG, TILT_MIN_DEG, TILT_MAX_DEG, LENS_HFOV_DEG } from './config.js';
 
-const RADIO_RANGE = 220;
+const RADIO_RANGE = 150;
+const PULSE_SECONDS = 1.6;
+const BAND_START_MHZ = 2400;
+const BAND_BINS = 84;
+const WIFI_CHANNELS_MHZ = [2412, 2437, 2462];
+const HOP_SECONDS = 0.12;
+const HOPS = 4;
+const DBM_MIN = -100;
+const DBM_MAX = -30;
+const DETECT_DBM = -80;
 const VISUAL_RANGE = 220;
 const RADAR_RANGE = 200;
 const HALF_FOV = LENS_HFOV_DEG / 2;
@@ -116,6 +125,7 @@ export function init() {
   const sim = {
     rig: null, key: 'cruce', time: 0, ended: false, endTimer: 0,
     phase: 'idle', phaseTime: 0, lostTime: 0, birdDiscarded: false,
+    pulseFront: 0, radioLock: false, inRange: false, hitFlash: 0, hops: [], hopTime: 0, spectrumTick: 0,
     pan: 0, tilt: 15, zoom: 1, clock: 0,
     record: null, trail: [], radio: false, inView: false,
     manualGoal: vec(0, 30, 40), targetLocal: vec(0, 30, 40), active: true,
@@ -144,6 +154,7 @@ export function init() {
     sim.active = true;
     sim.lostTime = 0;
     sim.birdDiscarded = false;
+    sim.radioLock = false;
     if (sim.record) finishRecord('cambio de escenario');
     setPhase('idle');
     if (key === 'manual') sim.targetLocal.copy(vec(-40, 30, 60));
@@ -264,10 +275,22 @@ export function init() {
     const elevation = deg(Math.atan2(local.y, Math.hypot(local.x, local.z)));
     const aim = lookDirection(sim.pan, sim.tilt);
     const offAxis = deg(aim.angleTo(local));
-    sim.radio = sim.active && kind === 'drone' && distance < RADIO_RANGE;
-    sim.inView = sim.active && offAxis < HALF_FOV && distance < VISUAL_RANGE;
     sim.phaseTime += dt;
     sim.clock += dt;
+    const inRange = sim.active && kind === 'drone' && distance < RADIO_RANGE;
+    const previousFront = sim.pulseFront;
+    sim.pulseFront = ((sim.clock % PULSE_SECONDS) / PULSE_SECONDS) * RADIO_RANGE;
+    const crossed = previousFront <= sim.pulseFront ? distance > previousFront && distance <= sim.pulseFront : distance <= sim.pulseFront;
+    if (inRange && !sim.radioLock && crossed) {
+      sim.radioLock = true;
+      sim.hitFlash = 1;
+      log(`Barrido de radio: enlace 2.4 GHz del dron identificado a ${Math.round(distance)} m`);
+    }
+    if (!inRange) sim.radioLock = false;
+    sim.hitFlash = Math.max(0, sim.hitFlash - dt * 1.2);
+    sim.inRange = inRange;
+    sim.radio = sim.radioLock && inRange;
+    sim.inView = sim.active && offAxis < HALF_FOV && distance < VISUAL_RANGE;
 
     let panGoal = 75 * Math.sin(sim.clock * 0.35);
     let tiltGoal = 22 + 12 * Math.sin(sim.clock * 0.21);
@@ -276,7 +299,7 @@ export function init() {
     if (sim.phase === 'idle') {
       if (sim.radio) {
         setPhase('radio');
-        log('Señal de radio 2.4 GHz detectada · buscando con la cámara');
+        log('Buscando el dron con la cámara');
       } else if (sim.inView && kind === 'bird' && !sim.birdDiscarded) {
         setPhase('verify');
         log('Objeto en cámara · verificando con IA');
@@ -350,7 +373,7 @@ export function init() {
     $('rPan').textContent = `${Math.round(sim.pan)}°`;
     $('rTilt').textContent = `${Math.round(sim.tilt)}°`;
     $('rZoom').textContent = `${sim.zoom.toFixed(1)}×`;
-    $('rRadio').textContent = sim.radio ? 'Detectada' : 'Sin señal';
+    $('rRadio').textContent = sim.radio ? 'Identificada' : sim.inRange ? 'En rango' : 'Sin señal';
     $('rDist').textContent = sim.active ? `${Math.round(distance)} m` : '—';
     $('rRec').textContent = sim.record ? mmss(sim.record.seconds) : '—';
     $('pipl').textContent = `Cámara Scout · 16 mm · zoom ${sim.zoom.toFixed(1)}×`;
@@ -397,11 +420,18 @@ export function init() {
       g.beginPath(); g.arc(c, c, (ring / RADAR_RANGE) * r, 0, Math.PI * 2); g.stroke();
       g.fillText(`${ring} m`, c + 8, c + (ring / RADAR_RANGE) * r - 8);
     }
-    if (sim.radio) {
-      g.strokeStyle = `rgba(25,184,236,${0.35 + 0.25 * Math.sin(sim.clock * 6)})`;
-      g.lineWidth = 6;
-      g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.stroke();
-    }
+    const radioRadius = (RADIO_RANGE / RADAR_RANGE) * r;
+    g.setLineDash([10, 8]);
+    g.strokeStyle = 'rgba(255,69,58,.55)';
+    g.beginPath(); g.arc(c, c, radioRadius, 0, Math.PI * 2); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = 'rgba(255,120,110,.8)';
+    g.fillText('radio', c - radioRadius + 10, c - 8);
+    const front = sim.pulseFront / RADIO_RANGE;
+    g.strokeStyle = `rgba(92,214,255,${0.85 * (1 - front)})`;
+    g.lineWidth = 4;
+    g.beginPath(); g.arc(c, c, front * radioRadius, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 2;
     const heading = -Math.PI / 2 + rad(sim.pan);
     const half = rad(HALF_FOV);
     const beam = g.createRadialGradient(c, c, 0, c, c, r);
@@ -421,11 +451,99 @@ export function init() {
       const colors = { alert: '#ff453a', verify: '#f5a524', bird: '#34c759' };
       g.fillStyle = colors[sim.phase] || (SCENARIOS[sim.key].kind === 'bird' ? '#9aa3ad' : '#ffffff');
       g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill();
+      if (sim.radio) {
+        g.strokeStyle = '#ff453a';
+        g.lineWidth = 3;
+        g.beginPath(); g.arc(x, y, 17, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = '#ff6b61';
+        g.fillText('2.4 GHz', x + 22, y + 6);
+      }
+      if (sim.hitFlash > 0) {
+        g.strokeStyle = `rgba(255,69,58,${sim.hitFlash})`;
+        g.lineWidth = 4;
+        g.beginPath(); g.arc(x, y, 17 + (1 - sim.hitFlash) * 40, 0, Math.PI * 2); g.stroke();
+      }
     }
     g.fillStyle = '#5cd6ff';
     g.beginPath(); g.arc(c, c, 10, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,.6)';
     g.fillText('Frente', c - 30, 30);
+  };
+
+
+  const spectrum = $('spectrum');
+  const spectrumContext = spectrum.getContext('2d');
+  let noteText = '';
+
+  // Histograma de la banda de 2.4 GHz: ruido, Wi-Fi en gris y los saltos del enlace del dron en rojo.
+  const drawSpectrum = (distance) => {
+    const g = spectrumContext;
+    const w = spectrum.width;
+    const h = spectrum.height;
+    const left = 52;
+    const bottom = 34;
+    const plotW = w - left - 12;
+    const plotH = h - bottom - 14;
+    const toY = (dbm) => 14 + plotH * (1 - (clamp(dbm, DBM_MIN, DBM_MAX) - DBM_MIN) / (DBM_MAX - DBM_MIN));
+    if (sim.clock - sim.hopTime > HOP_SECONDS) {
+      sim.hopTime = sim.clock;
+      sim.hops = Array.from({ length: HOPS }, () => Math.floor(Math.random() * (BAND_BINS - 2)));
+    }
+    const levels = Array.from({ length: BAND_BINS }, (_, bin) => {
+      const mhz = BAND_START_MHZ + bin;
+      let level = -96 + Math.random() * 4;
+      WIFI_CHANNELS_MHZ.forEach((center, k) => {
+        const offset = Math.abs(mhz - center);
+        if (offset < 11) level = Math.max(level, -73 + 5 * Math.sin(sim.clock * (1.3 + k) + k) - (offset / 10) ** 2 * 10 + Math.random() * 2);
+      });
+      return level;
+    });
+    const droneBins = new Set();
+    if (sim.inRange) {
+      const droneLevel = -42 - 28 * Math.min(1, distance / RADIO_RANGE);
+      sim.hops.forEach((bin) => [bin, bin + 1].forEach((b) => { droneBins.add(b); levels[b] = Math.max(levels[b], droneLevel + Math.random() * 3); }));
+    }
+    g.fillStyle = '#10161b';
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(255,255,255,.08)';
+    g.lineWidth = 1;
+    g.font = '600 16px Inter, sans-serif';
+    g.fillStyle = 'rgba(255,255,255,.45)';
+    g.textAlign = 'right';
+    for (let dbm = DBM_MIN; dbm <= DBM_MAX; dbm += 20) {
+      g.beginPath(); g.moveTo(left, toY(dbm)); g.lineTo(w - 12, toY(dbm)); g.stroke();
+      g.fillText(`${dbm}`, left - 8, toY(dbm) + 5);
+    }
+    g.textAlign = 'center';
+    for (let mhz = BAND_START_MHZ; mhz <= BAND_START_MHZ + 80; mhz += 20) {
+      g.fillText(`${mhz}`, left + ((mhz - BAND_START_MHZ) / BAND_BINS) * plotW, h - 10);
+    }
+    const barW = plotW / BAND_BINS;
+    levels.forEach((level, bin) => {
+      const isDrone = droneBins.has(bin);
+      g.fillStyle = isDrone ? (sim.radio ? '#ff453a' : '#e9edf0') : 'rgba(154,163,173,.55)';
+      const y = toY(level);
+      g.fillRect(left + bin * barW + 1, y, barW - 2, toY(DBM_MIN) - y);
+    });
+    g.setLineDash([8, 6]);
+    g.strokeStyle = 'rgba(245,165,36,.8)';
+    g.beginPath(); g.moveTo(left, toY(DETECT_DBM)); g.lineTo(w - 12, toY(DETECT_DBM)); g.stroke();
+    g.setLineDash([]);
+    g.textAlign = 'left';
+    g.fillStyle = 'rgba(245,165,36,.9)';
+    g.fillText('umbral', left + 6, toY(DETECT_DBM) - 6);
+    if (sim.radio) {
+      g.fillStyle = '#ff6b61';
+      g.textAlign = 'right';
+      g.fillText('Enlace del dron (saltos de frecuencia)', w - 16, 30);
+    }
+    const note = sim.radio ? `Enlace del dron identificado a ${Math.round(distance)} m · se marca en rojo.`
+      : sim.inRange ? 'Señal en rango: el barrido la identificará en un instante.'
+      : 'Barrido de escucha: busca el enlace de control del dron hasta 150 m.';
+    if (note !== noteText) {
+      noteText = note;
+      $('specNote').textContent = note;
+    }
   };
 
   const followCamera = (world, dt) => {
@@ -505,5 +623,7 @@ export function init() {
 
     updateOverlay(world, distance);
     drawRadar();
+    sim.spectrumTick += 1;
+    if (sim.spectrumTick % 2 === 0) drawSpectrum(distance);
   });
 }

@@ -1,13 +1,16 @@
 import * as THREE from 'three';
 
 const MAX_PIXEL_RATIO = 2;
+const MAX_PIXEL_RATIO_PHONE = 1.5;
+const PHONE_WIDTH = 760;
 const MIN_PIXEL_RATIO = 1;
 const SLOW_FRAME_MS = 34;
 const SAMPLE_FRAMES = 90;
 
 export function createRenderer(container, { alpha = false, toneMapping = THREE.ACESFilmicToneMapping } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_PIXEL_RATIO));
+  const cap = innerWidth < PHONE_WIDTH ? MAX_PIXEL_RATIO_PHONE : MAX_PIXEL_RATIO;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, cap));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = toneMapping;
