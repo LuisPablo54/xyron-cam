@@ -19,7 +19,6 @@ const FAQ = [
 ];
 
 const LAZY_MODULES = [
-  ['#top', () => import('./hero.js')],
   ['#simulador', () => import('./simulator.js')],
   ['#diseno', () => import('./studio.js')],
   ['#app', () => import('./app-demo.js')],
@@ -81,6 +80,20 @@ function setupContact() {
   }
 }
 
+// Pauso el video de portada si el usuario prefiere menos movimiento o si la portada no está a la vista.
+function setupHeroVideo() {
+  const video = document.getElementById('heroVideo');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    video.removeAttribute('autoplay');
+    video.pause();
+    return;
+  }
+  new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) video.play().catch(() => {});
+    else video.pause();
+  }).observe(video);
+}
+
 function setupVideos() {
   const videos = [...document.querySelectorAll('.vid video')];
   videos.forEach((video) => video.addEventListener('play', () => {
@@ -109,5 +122,6 @@ renderAccordions();
 setupExpandAll();
 setupTabs();
 setupContact();
+setupHeroVideo();
 setupVideos();
 setupLazyModules();

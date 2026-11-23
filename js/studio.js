@@ -10,10 +10,7 @@ const ease = (x) => x * x * (3 - 2 * x);
 
 const VIEWS = {
   general: { label: 'General', cam: [-0.42, 0.26, 0.78], target: [0, 0.13, 0], pan: -15, tilt: 8, explode: 0, title: 'Diseño limpio para cualquier fachada', text: 'Cuerpo blanco, aro grafito y una barra LED que te dice su estado de un vistazo. Pensada para verse bien en una azotea, no para esconderse.' },
-  lente: { label: 'Lente', cam: [-0.1, 0.2, 0.42], target: [0, 0.17, 0.06], pan: 0, tilt: 4, explode: 0, title: 'Telefoto de 16 mm', text: 'Cámara de 12.3 MP detrás de una ventana de policarbonato con filtro UV. Acerca al dron lo suficiente para confirmarlo y grabarlo.' },
   movimiento: { label: 'Movimiento', cam: [-0.5, 0.32, 0.74], target: [0, 0.14, 0], scan: true, explode: 0, title: 'Gira, inclina y no lo pierde', text: 'Giro de ±90° e inclinación de −10° a +90°: puede mirar el horizonte o justo encima de tu casa mientras sigue al dron.' },
-  dentro: { label: 'Por dentro', cam: [-0.78, 0.5, 1.22], target: [0, 0.16, 0], pan: 0, tilt: 0, explode: 100, title: 'Ingeniería a la vista', text: 'Carcasa sellada con juntas, válvula de ventilación ePTFE y prensacables IP68. El ensamble pasó la revisión de interferencias entre sus 60 piezas.' },
-  trasera: { label: 'Trasera', cam: [0.52, 0.3, -0.72], target: [0, 0.13, 0], pan: 0, tilt: 8, explode: 0, title: 'Antena y conexiones', text: 'Antena de 2.4 GHz inclinada hacia atrás para escuchar el enlace del dron, y entradas de cable protegidas para exteriores.' },
 };
 
 export function init() {
@@ -118,10 +115,6 @@ export function init() {
       rig = loaded;
       scene.add(rig.root);
       $('sld').remove();
-      const lensPoint = new THREE.Vector3();
-      rig.tilt.getWorldPosition(lensPoint);
-      VIEWS.lente.target = [lensPoint.x, lensPoint.y, lensPoint.z + 0.05];
-      VIEWS.lente.cam = [lensPoint.x - 0.1, lensPoint.y + 0.03, lensPoint.z + 0.36];
       const selected = document.querySelector('#sw [aria-pressed=true]');
       paintRig(rig, Number(selected.dataset.i));
     })

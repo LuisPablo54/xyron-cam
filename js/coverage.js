@@ -1,11 +1,10 @@
-import { PAN_LIMIT_DEG, LENS_HFOV_DEG } from './config.js';
+import { LENS_HFOV_DEG } from './config.js';
 
-const SECTOR_HALF_RAD = ((PAN_LIMIT_DEG + LENS_HFOV_DEG / 2) * Math.PI) / 180;
-const SAMPLE_GRID = 40;
-const CANDIDATE_GRID = 15;
-const ORIENTATIONS = 8;
+const SAMPLE_GRID = 48;
+const CANDIDATE_GRID = 20;
 const TARGET_COVERAGE = 0.995;
-const MAX_UNITS = 80;
+const MAX_UNITS = 200;
+const GREEDY_MAX_UNITS = 30;
 
 function buildSamples(width, length) {
   const samples = [];
@@ -17,39 +16,56 @@ function buildSamples(width, length) {
   return samples;
 }
 
-function buildCandidates(width, length) {
+function measure(units, samples, radius) {
+  const mask = new Uint8Array(samples.length);
+  let covered = 0;
+  samples.forEach(([x, y], s) => {
+    if (units.some((unit) => Math.hypot(x - unit.x, y - unit.y) <= radius)) {
+      mask[s] = 1;
+      covered += 1;
+    }
+  });
+  return { mask, covered: covered / samples.length };
+}
+
+// Acomodo en franjas: cada fila de equipos cubre una franja de alto h; pruebo cuántas filas conviene usar.
+function stripLayout(width, length, radius) {
+  let best = null;
+  for (const [across, along, swap] of [[width, length, false], [length, width, true]]) {
+    for (let rows = 1; rows <= MAX_UNITS; rows += 1) {
+      const band = along / rows;
+      if (band >= 2 * radius) continue;
+      const spacing = 2 * Math.sqrt(radius * radius - (band / 2) ** 2);
+      const columns = Math.ceil(across / spacing);
+      if (rows * columns > MAX_UNITS) break;
+      if (best && rows * columns >= best.length) continue;
+      const units = [];
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < columns; c += 1) {
+          const a = ((c + 0.5) / columns) * across;
+          const b = ((r + 0.5) / rows) * along;
+          units.push(swap ? { x: b, y: a } : { x: a, y: b });
+        }
+      }
+      best = units;
+    }
+  }
+  return best ?? [];
+}
+
+// Acomodo voraz: elijo, una por una, la posición que cubre más puntos todavía sin cubrir.
+function greedyLayout(width, length, radius, samples) {
   const candidates = [];
   for (let i = 0; i <= CANDIDATE_GRID; i += 1) {
     for (let j = 0; j <= CANDIDATE_GRID; j += 1) {
-      for (let k = 0; k < ORIENTATIONS; k += 1) {
-        candidates.push({ x: (i / CANDIDATE_GRID) * width, y: (j / CANDIDATE_GRID) * length, angle: (k / ORIENTATIONS) * Math.PI * 2 });
-      }
+      candidates.push({ x: (i / CANDIDATE_GRID) * width, y: (j / CANDIDATE_GRID) * length });
     }
   }
-  return candidates;
-}
-
-function covers(candidate, [sx, sy], radius) {
-  const dx = sx - candidate.x;
-  const dy = sy - candidate.y;
-  const distance = Math.hypot(dx, dy);
-  if (distance > radius) return false;
-  if (distance < 1e-6) return true;
-  let diff = Math.atan2(dy, dx) - candidate.angle;
-  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-  return Math.abs(diff) <= SECTOR_HALF_RAD;
-}
-
-// Elijo, una por una, la posición y orientación que cubre más puntos todavía sin cubrir.
-export function planCoverage(width, length, radius) {
-  const samples = buildSamples(width, length);
-  if (radius <= 0) return { units: [], covered: 0, samples, mask: new Uint8Array(samples.length) };
-  const candidates = buildCandidates(width, length);
-  const hits = candidates.map((candidate) => Uint8Array.from(samples, (sample) => (covers(candidate, sample, radius) ? 1 : 0)));
+  const hits = candidates.map((unit) => Uint8Array.from(samples, ([x, y]) => (Math.hypot(x - unit.x, y - unit.y) <= radius ? 1 : 0)));
   const mask = new Uint8Array(samples.length);
   const units = [];
-  let coveredCount = 0;
-  while (coveredCount / samples.length < TARGET_COVERAGE && units.length < MAX_UNITS) {
+  let covered = 0;
+  while (covered / samples.length < TARGET_COVERAGE && units.length < MAX_UNITS) {
     let best = -1;
     let bestGain = 0;
     hits.forEach((row, index) => {
@@ -58,10 +74,21 @@ export function planCoverage(width, length, radius) {
       if (gain > bestGain) { bestGain = gain; best = index; }
     });
     if (best < 0) break;
-    hits[best].forEach((hit, s) => { if (hit && !mask[s]) { mask[s] = 1; coveredCount += 1; } });
+    hits[best].forEach((hit, s) => { if (hit && !mask[s]) { mask[s] = 1; covered += 1; } });
     units.push(candidates[best]);
   }
-  return { units, covered: coveredCount / samples.length, samples, mask };
+  return units;
+}
+
+export function planCoverage(width, length, radius) {
+  const samples = buildSamples(width, length);
+  if (radius <= 0) return { units: [], covered: 0, samples, mask: new Uint8Array(samples.length) };
+  const strips = stripLayout(width, length, radius);
+  const layouts = strips.length && strips.length <= GREEDY_MAX_UNITS ? [strips, greedyLayout(width, length, radius, samples)] : [strips];
+  const plans = layouts.map((units) => ({ units, ...measure(units, samples, radius) }));
+  const complete = plans.filter((plan) => plan.covered >= TARGET_COVERAGE).sort((a, b) => a.units.length - b.units.length);
+  const chosen = complete[0] ?? plans.sort((a, b) => b.covered - a.covered)[0];
+  return { ...chosen, samples };
 }
 
 function draw(canvas, width, length, radius, plan) {
@@ -77,22 +104,15 @@ function draw(canvas, width, length, radius, plan) {
   g.fillRect(0, 0, canvas.width, canvas.height);
   g.fillStyle = '#ffffff';
   g.fillRect(px(0), py(length), width * scale, length * scale);
-  g.save();
-  g.beginPath();
-  g.rect(0, 0, canvas.width, canvas.height);
-  g.clip();
   plan.units.forEach((unit) => {
-    g.fillStyle = 'rgba(25,184,236,.14)';
+    g.fillStyle = 'rgba(25,184,236,.12)';
     g.strokeStyle = 'rgba(25,184,236,.55)';
     g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(px(unit.x), py(unit.y));
-    g.arc(px(unit.x), py(unit.y), radius * scale, -unit.angle - SECTOR_HALF_RAD, -unit.angle + SECTOR_HALF_RAD);
-    g.closePath();
+    g.arc(px(unit.x), py(unit.y), radius * scale, 0, Math.PI * 2);
     g.fill();
     g.stroke();
   });
-  g.restore();
   g.fillStyle = 'rgba(196,35,26,.75)';
   plan.samples.forEach(([x, y], i) => {
     if (plan.mask[i]) return;
@@ -102,13 +122,10 @@ function draw(canvas, width, length, radius, plan) {
   g.lineWidth = 3;
   g.strokeRect(px(0), py(length), width * scale, length * scale);
   plan.units.forEach((unit) => {
-    const x = px(unit.x);
-    const y = py(unit.y);
     g.fillStyle = '#1d2126';
-    g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#5cd6ff';
-    g.lineWidth = 4;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(-unit.angle) * 24, y + Math.sin(-unit.angle) * 24); g.stroke();
+    g.beginPath(); g.arc(px(unit.x), py(unit.y), 10, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#5cd6ff';
+    g.beginPath(); g.arc(px(unit.x), py(unit.y), 4, 0, Math.PI * 2); g.fill();
   });
   g.fillStyle = '#5b636d';
   g.font = '600 24px Inter, sans-serif';
