@@ -9,11 +9,11 @@ const vec = (values) => new THREE.Vector3(...values);
 const ease = (x) => x * x * (3 - 2 * x);
 
 const VIEWS = {
-  general: { label: 'General', cam: [-0.42, 0.26, 0.78], target: [0, 0.13, 0], pan: -15, tilt: 8, explode: 0, title: 'Diseño limpio para cualquier fachada', text: 'Cuerpo blanco y aro oscuro, pensada para verse bien en una azotea, no para esconderse.' },
+  general: { label: 'General', cam: [-0.42, 0.26, 0.78], target: [0, 0.13, 0], pan: -15, tilt: 8, explode: 0, title: 'Diseño limpio para cualquier fachada', text: 'Cuerpo de un solo color y aro oscuro, pensada para verse bien en una azotea, no para esconderse.' },
   movimiento: { label: 'Movimiento', cam: [-0.5, 0.32, 0.74], target: [0, 0.14, 0], scan: true, explode: 0, title: 'Gira, inclina y no lo pierde', text: 'Giro de ±90° e inclinación de −10° a +90°: puede mirar el horizonte o justo encima de tu casa mientras sigue al dron.' },
 };
 
-// Arranco el visor 3D interactivo (solo cuando el usuario lo pide) y regreso los controles que usa la interfaz.
+// Arranco el visor 3D interactivo y regreso los controles que usa la interfaz.
 export function start(container, colorIndex) {
   const $ = (id) => document.getElementById(id);
   const reduce = prefersReducedMotion();
@@ -139,15 +139,10 @@ export function start(container, colorIndex) {
       paintIndex = index;
       if (rig) paintRig(rig, index);
     },
-    toggleSpin() {
-      controls.autoRotate = !controls.autoRotate;
-      return controls.autoRotate;
+    setSpin(on) {
+      controls.autoRotate = on;
+      return on;
     },
     reset() { show(state.view); },
-    setActive(active) {
-      state.active = active;
-      clock.getDelta();
-      if (active) show(state.view, false);
-    },
   };
 }

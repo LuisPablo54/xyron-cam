@@ -36,6 +36,8 @@
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 8 2.5 8h-17S6 15 6 9z"/><path d="M10.2 20.5a2 2 0 0 0 3.6 0"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="16" rx="1"/><path d="M3.5 9.5h17M8 3v3M16 3v3M7.5 13.5h4M7.5 16.5h7"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M6.5 3h7.5l4.5 4.5V21h-12z"/><path d="M14 3v4.5h4.5M9.5 14.5l2 2 3.5-4"/></symbol>
+  <symbol id="i-muted" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
  </defs>
 </svg>
 
@@ -43,36 +45,28 @@
  <div class="wrap">
   <a class="logo" href="#top" aria-label="XYRON CAM Scout, inicio"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><b>XYRON</b><small>CAM / SCOUT</small></a>
   <nav class="tabs" id="tabs">
-   <a href="#funciones">Funciones</a><a href="#simulador">Simulador</a><a href="#diseno">Diseño</a><a href="#videos">Videos</a><a href="#app">App</a><a href="#cobertura">Cobertura</a><a href="#specs">Especificaciones</a><a href="#faq">Preguntas</a>
+   <a href="#simulador">Simulador</a><a href="#funciones">Funciones</a><a href="#diseno">Diseño</a><a href="#videos">Videos</a><a href="#app">App</a><a href="#cobertura">Cobertura</a><a href="#specs">Especificaciones</a><a href="#faq">Preguntas</a>
   </nav>
   <a class="go" href="#contacto">Contacto<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
  </div>
 </div>
 
 <header class="hero" id="top">
- <div class="copy">
+ <div class="stage">
+  <video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="img/hero-poster.jpg" aria-label="Video de presentación de XYRON CAM Scout"><source src="videos/hero.mp4" type="video/mp4"></video>
+  <button class="sound" id="heroSound" type="button" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-muted"/></svg><span>Activar sonido</span></button>
+ </div>
+ <div class="wrap copy">
   <div>
    <p class="kicker">Scout v4 · Detector de drones</p>
    <h1>Tu cielo, protegido.</h1>
+  </div>
+  <div>
    <p class="sub">XYRON CAM Scout vigila el cielo sobre tu casa o empresa. Detecta drones, los sigue con su cámara y te manda la alerta con evidencia lista para denunciar.</p>
+   <div class="cta"><a class="btn" href="#simulador">Probar el simulador<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="link" href="#diseno">Explorar en 3D</a></div>
   </div>
-  <div class="cta"><a class="btn" href="#simulador">Probar el simulador<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a><a class="link" href="#diseno">Explorar en 3D</a></div>
  </div>
- <figure class="product">
-  <div class="pbox">
-   <img src="img/360/blanco_43.webp" width="1000" height="800" alt="XYRON CAM Scout v4 en estudio, vista frontal" fetchpriority="high">
-   <div class="call r c1" aria-hidden="true"><i></i><s></s><span>Telefoto 16 mm<em>Sensor 12.3 MP</em></span></div>
-   <div class="call r c2" aria-hidden="true"><i></i><s></s><span>Pan ±90°<em>Tilt −10° a +90°</em></span></div>
-   <div class="call l c3" aria-hidden="true"><i></i><s></s><span>LED de estado</span></div>
-   <div class="call l c4 opt" aria-hidden="true"><i></i><s></s><span>Brida de montaje<em>8 tornillos</em></span></div>
-  </div>
- </figure>
 </header>
-
-<section class="reel" aria-label="Scout siguiendo un dron">
- <div id="hs" aria-hidden="true"><video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="img/hero-poster.jpg"><source src="videos/hero.mp4" type="video/mp4"></video></div>
- <div class="reel-bar"><span><i></i>Dron detectado · seguimiento automático</span><span>Escena generada por computadora</span></div>
-</section>
 
 <section class="band" id="problema">
  <div class="wrap stmt">
@@ -89,23 +83,7 @@
  </div>
 </section>
 
-<section class="band alt" id="funciones">
- <div class="wrap">
-  <div class="head">
-   <p class="kicker">Cómo funciona</p>
-   <h2>Detecta. Sigue. Documenta. Y protege.</h2>
-   <p class="lead">Dos sentidos trabajan juntos: un receptor de radio que escucha el enlace entre el dron y su control, y una cámara con inteligencia artificial que lo confirma visualmente.</p>
-  </div>
-  <div class="rows">
-   <article class="row"><span class="n">01</span><h3>Detecta</h3><p>Identifica la actividad de radio en 2.4 GHz de un dron cercano y la IA lo distingue de aves, aviones y hojas.</p><span class="m">2.4 GHz</span></article>
-   <article class="row"><span class="n">02</span><h3>Sigue</h3><p>La cabeza motorizada gira e inclina la cámara para mantener al dron centrado mientras esté a la vista.</p><span class="m">Pan ±90°</span></article>
-   <article class="row"><span class="n">03</span><h3>Documenta</h3><p>Graba video y capturas con fecha, hora, dirección y elevación de cada sobrevuelo.</p><span class="m">12.3 MP</span></article>
-   <article class="row"><span class="n">04</span><h3>Protege</h3><p>Te avisa en el celular al instante y deja la evidencia lista para presentar ante la autoridad.</p><span class="m">Alerta + expediente</span></article>
-  </div>
- </div>
-</section>
-
-<section class="band" id="simulador">
+<section class="band alt" id="simulador">
  <div class="wrap">
   <div class="head">
    <p class="kicker">Simulador</p>
@@ -162,34 +140,48 @@
  </div>
 </section>
 
+<section class="band" id="funciones">
+ <div class="wrap">
+  <div class="head">
+   <p class="kicker">Cómo funciona</p>
+   <h2>Detecta. Sigue. Documenta. Y protege.</h2>
+   <p class="lead">Dos sentidos trabajan juntos: un receptor de radio que escucha el enlace entre el dron y su control, y una cámara con inteligencia artificial que lo confirma visualmente.</p>
+  </div>
+  <div class="rows">
+   <article class="row"><span class="n">01</span><h3>Detecta</h3><p>Identifica la actividad de radio en 2.4 GHz de un dron cercano y la IA lo distingue de aves, aviones y hojas.</p><span class="m">2.4 GHz</span></article>
+   <article class="row"><span class="n">02</span><h3>Sigue</h3><p>La cabeza motorizada gira e inclina la cámara para mantener al dron centrado mientras esté a la vista.</p><span class="m">Pan ±90°</span></article>
+   <article class="row"><span class="n">03</span><h3>Documenta</h3><p>Graba video y capturas con fecha, hora, dirección y elevación de cada sobrevuelo.</p><span class="m">12.3 MP</span></article>
+   <article class="row"><span class="n">04</span><h3>Protege</h3><p>Te avisa en el celular al instante y deja la evidencia lista para presentar ante la autoridad.</p><span class="m">Alerta + expediente</span></article>
+  </div>
+ </div>
+</section>
+
 <section class="band alt" id="diseno">
  <div class="wrap">
   <div class="head">
    <p class="kicker">Diseño</p>
    <h2>Míralo desde todos los ángulos.</h2>
-   <p class="lead">Este es el modelo real de la Scout v4. Gíralo en la foto de 360° o cambia al 3D interactivo para ver cómo se mueve y cómo está hecha por dentro.</p>
+   <p class="lead">Este es el modelo real de la Scout v4 en 3D. Gíralo, acércate, cambia el color y ábrelo para ver cómo se mueve y cómo está hecha por dentro.</p>
   </div>
   <div class="studio">
    <div class="sv" id="sv">
-    <div class="spin" id="spin"><img id="spinImg" alt="Scout v4 en estudio, vista de 360°" draggable="false"></div>
-    <div class="ld" id="sld">Cargando vista 360°…</div>
+    <div class="ld" id="sld">Cargando modelo 3D…</div>
     <div class="tools">
      <button class="ibtn" type="button" id="btnSpin" aria-pressed="false" aria-label="Girar automáticamente" title="Girar automáticamente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
      <button class="ibtn" type="button" id="btnReset" aria-label="Restablecer vista" title="Restablecer vista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
      <button class="ibtn" type="button" id="btnFull" aria-label="Pantalla completa" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
-    <div class="hint" id="svHint">Arrastra para girar 360°</div>
+    <div class="hint" id="svHint">Arrastra para girar · rueda o pellizco para acercar</div>
    </div>
    <div class="side">
-    <div class="chips" role="group" aria-label="Tipo de vista"><button type="button" id="modePhoto" aria-pressed="true">Foto 360°</button><button type="button" id="mode3d" aria-pressed="false">3D interactivo</button></div>
     <div>
      <p class="lbl">Color: <b id="cname">Blanco ártico</b></p>
      <div class="sw" id="sw" role="group" aria-label="Color"></div>
     </div>
-    <div class="views" id="views" role="group" aria-label="Vista del modelo" hidden></div>
-    <div class="cap"><h3 id="ct">Diseño limpio para cualquier fachada</h3><p id="cd">Cuerpo blanco y aro oscuro, pensada para verse bien en una azotea, no para esconderse.</p></div>
-    <div class="ctl" id="exCtl" hidden><label for="ex">Explosionado <output id="exv">0 %</output></label><input id="ex" type="range" min="0" max="100" value="0"></div>
-    <p class="note" id="svNote">Render fotorrealista de la Scout v4 con sus materiales. Blanco ártico es el color de producción porque refleja más sol y ayuda a mantener fresco el interior; Arena es un color de concepto.</p>
+    <div class="views" id="views" role="group" aria-label="Vista del modelo"></div>
+    <div class="cap"><h3 id="ct">Diseño limpio para cualquier fachada</h3><p id="cd">Cuerpo de un solo color y aro oscuro, pensada para verse bien en una azotea, no para esconderse.</p></div>
+    <div class="ctl" id="exCtl"><label for="ex">Explosionado <output id="exv">0 %</output></label><input id="ex" type="range" min="0" max="100" value="0"></div>
+    <p class="note" id="svNote">Render en tiempo real con materiales aproximados. Blanco ártico es el color de producción porque refleja más sol y ayuda a mantener fresco el interior; Arena y Azul cielo son colores de concepto.</p>
    </div>
   </div>
  </div>

@@ -11,8 +11,8 @@ import json
 import re
 import sys
 
-FONTS_IMPORT = ('<style>@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500'
-                '&family=Inter+Tight:wght@400;500;600&display=swap");</style>')
+FONTS_TAG = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500'
+             '&amp;family=Inter+Tight:wght@400;500;600&amp;display=swap">')
 
 PALETTE = {
     # neutros pizarra -> grafito
@@ -72,9 +72,9 @@ def primary_button(style):
 
 
 def restyle(template):
-    if FONTS_IMPORT not in template:
-        template = template.replace('<helmet>', '<helmet>\n' + FONTS_IMPORT, 1)
     template = template.replace(*FONT_LINK)
+    if 'family=Inter+Tight' not in template:
+        template = template.replace('<helmet>', '<helmet>\n' + FONTS_TAG, 1)
     template = template.replace("'Manrope'", "'Inter Tight'").replace("'JetBrains Mono'", "'DM Mono'")
     template = re.sub(r'#[0-9A-Fa-f]{6}\b', lambda m: PALETTE.get(m.group(0).upper(), m.group(0)), template)
     template = re.sub(r'rgba\((\d+,\d+,\d+),', lambda m: 'rgba(' + RGBA.get(m.group(1), m.group(1)) + ',', template)
