@@ -408,13 +408,13 @@ export function init() {
     const r = c * 0.92;
     const toRadar = (local) => [c + (local.x / RADAR_RANGE) * r, c - (local.z / RADAR_RANGE) * r];
     g.clearRect(0, 0, s, s);
-    g.fillStyle = '#10161b';
+    g.fillStyle = '#0e1011';
     g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,.05)';
     g.beginPath(); g.moveTo(c, c); g.arc(c, c, r, -Math.PI / 2 + rad(PAN_LIMIT_DEG + HALF_FOV), -Math.PI / 2 - rad(PAN_LIMIT_DEG + HALF_FOV)); g.fill();
     g.strokeStyle = 'rgba(255,255,255,.16)';
     g.lineWidth = 2;
-    g.font = '600 20px Inter, sans-serif';
+    g.font = '400 20px "DM Mono", monospace';
     g.fillStyle = 'rgba(255,255,255,.45)';
     for (const ring of [50, 100, 150, 200]) {
       g.beginPath(); g.arc(c, c, (ring / RADAR_RANGE) * r, 0, Math.PI * 2); g.stroke();
@@ -503,11 +503,11 @@ export function init() {
       const droneLevel = -42 - 28 * Math.min(1, distance / RADIO_RANGE);
       sim.hops.forEach((bin) => [bin, bin + 1].forEach((b) => { droneBins.add(b); levels[b] = Math.max(levels[b], droneLevel + Math.random() * 3); }));
     }
-    g.fillStyle = '#10161b';
+    g.fillStyle = '#0e1011';
     g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(255,255,255,.08)';
     g.lineWidth = 1;
-    g.font = '600 16px Inter, sans-serif';
+    g.font = '400 16px "DM Mono", monospace';
     g.fillStyle = 'rgba(255,255,255,.45)';
     g.textAlign = 'right';
     for (let dbm = DBM_MIN; dbm <= DBM_MAX; dbm += 20) {

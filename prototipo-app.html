@@ -3,44 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#EEF2F3">
+<meta name="theme-color" content="#ECEEEF">
 <title>XYRON CAM · Prototipo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#10202B; --muted:#5E6E78; --line:#DCE4E8; --bg:#EEF2F3;
-  --teal:#14B3A5; --teal-ink:#0A7C73; --teal-soft:#DDF3F0; --bezel:#1A2227;
+  --ink:#0E1011; --muted:#5F656B; --line:#C8CDD1; --bg:#ECEEEF;
+  --teal:#19B8EC; --teal-ink:#0E1011; --teal-soft:#DCDFE2; --bezel:#0E1011;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
+body{font-family:"Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);overflow:hidden}
 
 .layout{display:grid;grid-template-columns:330px 1fr;height:100vh;height:100dvh}
-.panel{padding:40px 32px;display:flex;flex-direction:column;gap:28px;border-right:1px solid var(--line);background:#F7F9FA;overflow-y:auto}
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.02em}
-.brand svg{width:26px;height:26px}
+.panel{padding:40px 32px;display:flex;flex-direction:column;gap:28px;border-right:1px solid var(--line);background:#F7F8F8;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:12px;font-weight:500;font-size:16px;letter-spacing:.32em}
+.brand svg{width:20px;height:20px}
 .intro{font-size:15px;line-height:1.55;color:var(--muted);max-width:30ch}
-.intro b{color:var(--ink);font-weight:700}
+.intro b{color:var(--ink);font-weight:600}
 #menu{display:flex;flex-direction:column;gap:16px}
-.group h3{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.group h3{font:400 11.5px "DM Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .group ul{list-style:none;display:flex;flex-direction:column;gap:2px}
-.group button{all:unset;box-sizing:border-box;width:100%;padding:9px 12px;border-radius:10px;font-size:14.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px}
+.group button{all:unset;box-sizing:border-box;width:100%;padding:9px 12px;border-radius:0;font-size:14.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:10px}
 .group button::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
-.group button:hover{background:#ECF1F3}
-.group button[aria-current="page"]{background:var(--teal-soft);color:var(--teal-ink)}
+.group button:hover{background:#ECEEEF}
+.group button[aria-current="page"]{background:var(--ink);color:#fff}
 .group button[aria-current="page"]::before{background:var(--teal)}
 .group button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-.tip{margin-top:auto;font-size:13px;line-height:1.5;color:var(--muted);padding:14px;border-radius:14px;background:#fff;border:1px solid var(--line)}
-.reset{all:unset;cursor:pointer;font-size:13.5px;font-weight:700;color:var(--teal-ink)}
+.tip{margin-top:auto;font-size:13px;line-height:1.5;color:var(--muted);padding:14px;border-radius:0;background:#fff;border:1px solid var(--line)}
+.reset{all:unset;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--ink);border-bottom:1px solid currentColor}
 .reset:focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:4px}
 
 .stage{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
-  background:radial-gradient(ellipse at 50% 35%, #F9FBFC 0%, var(--bg) 70%)}
+  background:radial-gradient(ellipse at 50% 35%, #F7F8F8 0%, var(--bg) 70%)}
 .box{position:relative}
 .phone{position:absolute;top:0;left:0;width:418px;height:872px;padding:14px;border-radius:62px;background:var(--bezel);
-  transform-origin:0 0;box-shadow:0 50px 90px -40px rgba(16,32,43,.55),inset 0 0 0 1px rgba(255,255,255,.07)}
+  transform-origin:0 0;box-shadow:0 50px 90px -40px rgba(14,16,17,.55),inset 0 0 0 1px rgba(255,255,255,.07)}
 .screen{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:#fff}
 .screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;opacity:0;transition:opacity .28s ease}
 .screen iframe.on{opacity:1;z-index:2}
@@ -49,7 +49,7 @@ body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;color:var
 @keyframes spin{to{transform:rotate(360deg)}}
 
 .toast{position:absolute;left:50%;bottom:110px;transform:translate(-50%,16px);z-index:10;opacity:0;pointer-events:none;
-  background:var(--ink);color:#fff;font-size:14px;font-weight:600;padding:12px 18px;border-radius:14px;max-width:340px;text-align:center;
+  background:var(--ink);color:#fff;font-size:14px;font-weight:500;padding:12px 18px;border-radius:0;max-width:340px;text-align:center;
   transition:opacity .25s, transform .25s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -74,9 +74,7 @@ body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;color:var
 <div class="layout">
   <aside class="panel">
     <div class="brand">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
-        <path d="M5 5l14 14" stroke="#10202B"/><path d="M19 5L5 19" stroke="#14B3A5"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5.5 5.5l4.8 4.8M18.5 5.5l-4.8 4.8M5.5 18.5l4.8-4.8M18.5 18.5l-4.8-4.8"/></svg>
       XYRON CAM
     </div>
     <p class="intro">Prototipo navegable de la app. <b>Toca la app</b> como si fuera tu celular o salta a cualquier vista desde aquí.</p>

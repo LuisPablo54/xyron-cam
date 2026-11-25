@@ -5,7 +5,7 @@ Sitio estático de XYRON CAM Scout. Se publica con GitHub Pages; no necesita ser
 | Ruta | Qué es |
 |---|---|
 | `index.html` | Página: portada en video, simulador, visor, videos, demo de la app, cobertura, especificaciones, contacto |
-| `css/site.css` | Estilos |
+| `css/site.css` | Estilos: gris claro, tinta y líneas finas; Inter Tight para texto y DM Mono para datos |
 | `js/config.js` | **Enlace del formulario de contacto** y límites del equipo |
 | `js/main.js` | Acordeones, pestañas, videos, contacto y carga diferida de cada sección |
 | `js/scout-model.js` | Carga del GLB, materiales, rig (PAN/TILT), explosionado y colores |
@@ -21,6 +21,7 @@ Sitio estático de XYRON CAM Scout. Se publica con GitHub Pages; no necesita ser
 | `tools/build_model.py` | Tabla de explosionado; también arma el rig desde un GLB de CAD |
 | `tools/render_hero.py`, `tools/overlay_hero.py` | Render del video de portada desde la escena de Blender |
 | `tools/render_turntable.py` | Render del giro 360° en estudio (`img/360/`) |
+| `tools/restyle_screens.py` | Aplica la paleta, fuentes y esquinas del sitio a las pantallas exportadas de la app (`screens/`) |
 | `prototipo-app.html` | Prototipo de la app a pantalla completa |
 
 ## Formulario de contacto
