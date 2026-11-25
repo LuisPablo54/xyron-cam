@@ -107,32 +107,32 @@ function draw(canvas, width, length, radius, plan) {
   const oy = (canvas.height - spanY * scale) / 2 + (minY + spanY) * scale;
   const px = (x) => ox + x * scale;
   const py = (y) => oy - y * scale;
-  g.fillStyle = '#eef3f5';
+  g.fillStyle = '#f7f8f8';
   g.fillRect(0, 0, canvas.width, canvas.height);
   plan.units.forEach((unit) => {
-    g.fillStyle = 'rgba(25,184,236,.13)';
-    g.strokeStyle = 'rgba(25,184,236,.7)';
-    g.lineWidth = 3;
+    g.fillStyle = 'rgba(25,184,236,.09)';
+    g.strokeStyle = 'rgba(25,184,236,.8)';
+    g.lineWidth = 2;
     g.beginPath();
     g.arc(px(unit.x), py(unit.y), radius * scale, 0, Math.PI * 2);
     g.fill();
     g.stroke();
   });
   g.fillStyle = '#ffffff';
-  g.strokeStyle = '#1d2126';
-  g.lineWidth = 3;
+  g.strokeStyle = '#0e1011';
+  g.lineWidth = 2;
   const lotW = Math.max(width * scale, 6);
   const lotH = Math.max(length * scale, 6);
   g.fillRect(px(width / 2) - lotW / 2, py(length / 2) - lotH / 2, lotW, lotH);
   g.strokeRect(px(width / 2) - lotW / 2, py(length / 2) - lotH / 2, lotW, lotH);
   plan.units.forEach((unit) => {
-    g.fillStyle = '#1d2126';
-    g.beginPath(); g.arc(px(unit.x), py(unit.y), 9, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#5cd6ff';
-    g.beginPath(); g.arc(px(unit.x), py(unit.y), 4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#0e1011';
+    g.beginPath(); g.arc(px(unit.x), py(unit.y), 8, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#19b8ec';
+    g.beginPath(); g.arc(px(unit.x), py(unit.y), 3.5, 0, Math.PI * 2); g.fill();
   });
-  g.fillStyle = '#5b636d';
-  g.font = '600 22px Inter, sans-serif';
+  g.fillStyle = '#5f656b';
+  g.font = '400 20px "DM Mono", monospace';
   g.textAlign = 'center';
   g.fillText(`radio ${Math.round(radius)} m`, canvas.width / 2, canvas.height - 10);
 }
