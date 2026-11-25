@@ -63,18 +63,29 @@ function setupContact() {
   }
 }
 
-// Pauso el video de portada si el usuario prefiere menos movimiento o si la portada no está a la vista.
+// El video arranca sin sonido (los navegadores no permiten otra cosa) y se pausa fuera de pantalla.
+// Con "menos movimiento" no se reproduce solo: queda con los controles del navegador.
 function setupHeroVideo() {
   const video = document.getElementById('heroVideo');
+  const sound = document.getElementById('heroSound');
+  sound.addEventListener('click', () => {
+    video.muted = !video.muted;
+    if (!video.muted) video.play().catch(() => {});
+    sound.setAttribute('aria-pressed', String(!video.muted));
+    sound.querySelector('span').textContent = video.muted ? 'Activar sonido' : 'Silenciar';
+    sound.querySelector('use').setAttribute('href', video.muted ? '#i-muted' : '#i-sound');
+  });
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     video.removeAttribute('autoplay');
     video.pause();
+    video.controls = true;
+    sound.hidden = true;
     return;
   }
   new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) video.play().catch(() => {});
+    if (entries[entries.length - 1].isIntersecting) video.play().catch(() => {});
     else video.pause();
-  }).observe(video);
+  }, { threshold: 0.25 }).observe(video);
 }
 
 function setupVideos() {

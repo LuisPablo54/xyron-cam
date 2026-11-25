@@ -35,7 +35,8 @@ export function runWhenVisible(renderer, container, frame) {
   let last = 0;
   let total = 0;
   let count = 0;
-  new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; }).observe(container);
+  // Un mismo aviso puede traer varios cambios del contenedor; el último es el vigente.
+  new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; }).observe(container);
   renderer.setAnimationLoop((now) => {
     if (!visible || document.hidden) { last = 0; return; }
     if (last) {
