@@ -1,8 +1,6 @@
-import { CONTACT_FORM_URL } from './config.js';
-
 const SPECS = [
   ['Dimensiones', [['Medidas totales', '210 × 254 × 245 mm'], ['Cabeza', '144 × 143 × 146 mm'], ['Montaje', 'Brida a pretil o losa, 8 tornillos']]],
-  ['Movimiento', [['Giro (pan)', '±90° (mecánica preparada para ±135°)'], ['Inclinación (tilt)', 'De −10° a +90°'], ['Modo', 'Patrullaje y seguimiento automático']]],
+  ['Movimiento', [['Giro (pan)', '360° continuo'], ['Inclinación (tilt)', 'De −10° a +90°'], ['Modo', 'Patrullaje, alerta temprana y seguimiento automático']]],
   ['Detección', [['Radio', 'Actividad en 2.4 GHz'], ['Visión', 'Detector de drones con IA (YOLO)'], ['Clases', 'Distingue drones de aves']]],
   ['Cámara y procesamiento', [['Sensor', '12.3 MP'], ['Lente', 'Telefoto de 16 mm'], ['Procesamiento', 'Local, con acelerador de IA']]],
   ['Materiales', [['Cabeza y tapas', 'ASA / PC-ASA con estabilizador UV'], ['Ventana', 'Policarbonato con filtro UV y capa antirrayas']]],
@@ -15,7 +13,7 @@ const FAQ = [
   ['¿Necesito internet?', 'El análisis de video ocurre dentro del equipo. La conexión se usa para mandarte alertas y respaldar la evidencia.'],
   ['¿Funciona de noche?', 'La detección por radio funciona de día y de noche. La confirmación visual nocturna está en evaluación para la versión comercial.'],
   ['¿Dónde se instala?', 'En el pretil o la losa de la azotea, con vista despejada al cielo y una toma de corriente cercana.'],
-  ['¿Cuándo sale a la venta?', 'Scout es un prototipo en desarrollo. Escríbenos desde el formulario de contacto para enterarte de las pruebas piloto.'],
+  ['¿Cuándo sale a la venta?', 'Scout es un prototipo en desarrollo. Llámanos o escríbenos por WhatsApp al +52 477 132 7360 para enterarte de las pruebas piloto.'],
 ];
 
 const LAZY_MODULES = [
@@ -45,22 +43,6 @@ function setupTabs() {
     const section = document.querySelector(tab.getAttribute('href'));
     if (section) observer.observe(section);
   });
-}
-
-function setupContact() {
-  const note = document.getElementById('contactNote');
-  document.querySelectorAll('[data-contact]').forEach((link) => {
-    if (!CONTACT_FORM_URL) return;
-    link.href = CONTACT_FORM_URL;
-    link.target = '_blank';
-    link.rel = 'noopener';
-  });
-  if (CONTACT_FORM_URL) {
-    note.textContent = 'Se abre en Google Forms, en una pestaña nueva.';
-  } else {
-    note.textContent = 'El formulario estará disponible muy pronto.';
-    document.getElementById('contactBtn').setAttribute('aria-disabled', 'true');
-  }
 }
 
 // El video arranca sin sonido (los navegadores no permiten otra cosa) y se pausa fuera de pantalla.
@@ -114,7 +96,6 @@ function setupLazyModules() {
 
 renderAccordions();
 setupTabs();
-setupContact();
 setupHeroVideo();
 setupVideos();
 setupLazyModules();
