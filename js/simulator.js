@@ -1,10 +1,9 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCity, makeDrone, makeBird } from './city.js';
 import { createScout, aimRig } from './scout-model.js';
 import { createRenderer, watchSize, runWhenVisible } from './renderer.js';
-import { PAN_LIMIT_DEG, TILT_MIN_DEG, TILT_MAX_DEG, LENS_HFOV_DEG } from './config.js';
+import { TILT_MIN_DEG, TILT_MAX_DEG, LENS_HFOV_DEG } from './config.js';
 
 const RADIO_RANGE = 150;
 const PULSE_SECONDS = 1.6;
@@ -16,17 +15,21 @@ const HOPS = 4;
 const DBM_MIN = -100;
 const DBM_MAX = -30;
 const DETECT_DBM = -80;
-const VISUAL_RANGE = 220;
+const DETECT_RANGE = 130;
+const TRACK_RANGE = 200;
 const RADAR_RANGE = 200;
 const HALF_FOV = LENS_HFOV_DEG / 2;
 const ANALYZE_SECONDS = 1.2;
 const LOST_SECONDS = 2.5;
 const RESTART_SECONDS = 4;
+const PATROL_RATE = 36;
+const SEARCH_RATE = 120;
+const SPIN_ACCEL = 90;
+const SEARCH_TILT = [8, 60];
+const SEARCH_SWEEP_SECONDS = 9;
 const PAN_RATE = 110;
 const TILT_RATE = 80;
-const MANUAL_SPEED = 18;
 const MAX_ZOOM = 12;
-const MANUAL_MAX_DISTANCE = 200;
 const SCOUT_EYE = 0.17;
 const MAX_LOG = 30;
 const SIM_STEP = 1 / 60;
@@ -39,30 +42,22 @@ const lerp3 = (a, b, k) => a.clone().lerp(b, k);
 const deg = THREE.MathUtils.radToDeg;
 const rad = THREE.MathUtils.degToRad;
 const clamp = THREE.MathUtils.clamp;
+const wrap180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
+const triangle = (x) => 1 - Math.abs((((x % 2) + 2) % 2) - 1);
 const clockText = () => new Date().toLocaleTimeString('es-MX', { hour12: false });
 const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 // Trayectorias en metros, en ejes de Scout: x a su derecha, y arriba, z al frente.
 const SCENARIOS = {
+  // Entra de frente a ~200 m, pasa cerca por encima y sale por detrás: la radio lo oye antes de que la cámara pueda verlo.
   cruce: {
-    name: 'Sobrevuelo', kind: 'drone', duration: 34,
-    at: (t) => lerp3(vec(-150, 45, 120), vec(90, 60, -40), t / 34),
-  },
-  merodeo: {
-    name: 'Merodeo', kind: 'drone', duration: 48,
-    at: (t) => {
-      const center = vec(5, 40, 70);
-      const orbit = (s) => center.clone().add(vec(35 * Math.sin(s * 0.2), 4 * Math.sin(s * 0.5), 35 * Math.cos(s * 0.2)));
-      if (t < 10) return lerp3(vec(10, 70, 195), orbit(0), t / 10);
-      if (t < 38) return orbit(t - 10);
-      return lerp3(orbit(28), vec(-180, 80, 110), (t - 38) / 10);
-    },
+    name: 'Sobrevuelo', kind: 'drone', duration: 40,
+    at: (t) => lerp3(vec(-125, 40, 150), vec(165, 65, -115), t / 40),
   },
   ave: {
-    name: 'Pasa un ave', kind: 'bird', duration: 20,
-    at: (t) => lerp3(vec(-90, 16, 40), vec(80, 20, 60), t / 20).add(vec(0, 1.5 * Math.sin(t * 2.2), 0)),
+    name: 'Pasa un ave', kind: 'bird', duration: 22,
+    at: (t) => lerp3(vec(-90, 16, 40), vec(80, 20, 60), t / 22).add(vec(0, 1.5 * Math.sin(t * 2.2), 0)),
   },
-  manual: { name: 'Manual', kind: 'drone', duration: Infinity, at: null },
 };
 
 export function init() {
@@ -100,20 +95,13 @@ export function init() {
 
   const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 900);
   const lens = new THREE.PerspectiveCamera(20, 16 / 9, 0.05, 900);
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enabled = false;
-  controls.enableDamping = true;
-  controls.minDistance = 0.6;
-  controls.maxDistance = 80;
-  controls.maxPolarAngle = Math.PI * 0.62;
-  controls.target.copy(eye);
 
   let size = { w: 1, h: 1 };
   let pip = { x: 0, y: 0, w: 1, h: 1 };
   watchSize(renderer, container, (w, h) => {
     size = { w, h };
     const narrow = w < 560;
-    const pw = Math.round(w * (narrow ? 0.46 : 0.36));
+    const pw = Math.round(w * (narrow ? 0.46 : 0.32));
     const ph = Math.round((pw * 9) / 16);
     pip = { w: pw, h: ph, x: w - pw - 12, y: narrow ? 52 : h - ph - 12 };
     Object.assign($('pipf').style, { left: `${pip.x}px`, top: `${pip.y}px`, width: `${pw}px`, height: `${ph}px` });
@@ -126,10 +114,10 @@ export function init() {
     rig: null, key: 'cruce', time: 0, ended: false, endTimer: 0,
     phase: 'idle', phaseTime: 0, lostTime: 0, birdDiscarded: false,
     pulseFront: 0, radioLock: false, inRange: false, hitFlash: 0, hops: [], hopTime: 0, spectrumTick: 0,
-    pan: 0, tilt: 15, zoom: 1, clock: 0,
+    pan: 0, tilt: 15, zoom: 1, clock: 0, spin: 0, panSpeed: 0,
     record: null, trail: [], radio: false, inView: false,
-    manualGoal: vec(0, 30, 40), targetLocal: vec(0, 30, 40), active: true,
-    camPos: null, camLook: null, mode: 'chase', prevWorld: null,
+    targetLocal: vec(0, 30, 40), active: true,
+    camPos: null, camLook: null, prevWorld: null,
   };
 
   const log = (text, kind = '') => {
@@ -157,9 +145,7 @@ export function init() {
     sim.radioLock = false;
     if (sim.record) finishRecord('cambio de escenario');
     setPhase('idle');
-    if (key === 'manual') sim.targetLocal.copy(vec(-40, 30, 60));
     document.querySelectorAll('#scen button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === key)));
-    $('manual').hidden = key !== 'manual';
     log(`Escenario: ${SCENARIOS[key].name}`);
   };
 
@@ -171,56 +157,14 @@ export function init() {
     log(`Evento guardado · ${mmss(record.seconds)} · dirección ${compass} · elevación máx. ${Math.round(record.maxElevation)}° (${reason})`, 'alert');
   };
 
-  const readManualGoal = () => {
-    const azimuth = rad(Number($('mAz').value));
-    const distance = Number($('mDist').value);
-    const altitude = Number($('mAlt').value);
-    sim.manualGoal.set(Math.sin(azimuth) * distance, altitude, Math.cos(azimuth) * distance);
-    $('mAzv').textContent = `${$('mAz').value}°`;
-    $('mDistv').textContent = `${distance} m`;
-    $('mAltv').textContent = `${altitude} m`;
-  };
-
   $('scen').addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (button) resetScenario(button.dataset.k);
   });
-  ['mAz', 'mDist', 'mAlt'].forEach((id) => $(id).addEventListener('input', readManualGoal));
   $('simReset').addEventListener('click', () => resetScenario(sim.key));
-  const setCameraMode = (mode) => {
-    sim.mode = mode;
-    controls.enabled = mode === 'free';
-    renderer.domElement.style.touchAction = mode === 'free' ? 'none' : 'pan-y';
-    if (mode === 'free') {
-      controls.target.copy(eye);
-      camera.position.copy(eye).add(vec(-3, 1.6, 4));
-    }
-    $('camChase').setAttribute('aria-pressed', String(mode === 'chase'));
-    $('camFree').setAttribute('aria-pressed', String(mode === 'free'));
-  };
-  $('camChase').addEventListener('click', () => setCameraMode('chase'));
-  renderer.domElement.style.touchAction = 'pan-y';
-  $('camFree').addEventListener('click', () => setCameraMode('free'));
 
   const radar = $('radar');
   const radarContext = radar.getContext('2d');
-  const radarPointer = (event) => {
-    const rect = radar.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-    const distance = Math.min(1, Math.hypot(x, y)) * RADAR_RANGE * 1.05;
-    if (sim.key !== 'manual') resetScenario('manual');
-    $('mAz').value = Math.round(deg(Math.atan2(x, -y)));
-    $('mDist').value = clamp(Math.round(distance), 10, MANUAL_MAX_DISTANCE);
-    readManualGoal();
-  };
-  radar.addEventListener('pointerdown', (event) => {
-    radar.setPointerCapture(event.pointerId);
-    radarPointer(event);
-  });
-  radar.addEventListener('pointermove', (event) => { if (radar.hasPointerCapture(event.pointerId)) radarPointer(event); });
-
-  readManualGoal();
   resetScenario('cruce');
 
   createScout()
@@ -244,13 +188,6 @@ export function init() {
 
   const updateTarget = (dt) => {
     const scenario = SCENARIOS[sim.key];
-    if (sim.key === 'manual') {
-      const step = sim.manualGoal.clone().sub(sim.targetLocal);
-      const distance = step.length();
-      if (distance > 0.01) sim.targetLocal.addScaledVector(step, Math.min(1, (MANUAL_SPEED * dt) / distance));
-      sim.active = true;
-      return;
-    }
     if (sim.ended) {
       sim.endTimer += dt;
       if (sim.endTimer > RESTART_SECONDS) resetScenario(sim.key);
@@ -266,7 +203,9 @@ export function init() {
     sim.targetLocal.copy(scenario.at(sim.time));
   };
 
-  // Máquina de estados: patrulla → radio → verificación con IA → alerta (o ave descartada).
+  // Máquina de estados: patrulla → alerta temprana por radio → verificación con IA → alerta (o ave descartada).
+  // La radio solo dice que hay un dron cerca, no dónde: en alerta temprana la cámara gira más rápido y barre
+  // el cielo en espiral hasta que lo encuentra.
   const updateDetection = (dt) => {
     const kind = SCENARIOS[sim.key].kind;
     const local = sim.targetLocal;
@@ -284,38 +223,32 @@ export function init() {
     if (inRange && !sim.radioLock && crossed) {
       sim.radioLock = true;
       sim.hitFlash = 1;
-      log(`Barrido de radio: enlace 2.4 GHz del dron identificado a ${Math.round(distance)} m`);
+      log('Radio 2.4 GHz: señal de control de un dron detectada');
     }
     if (!inRange) sim.radioLock = false;
     sim.hitFlash = Math.max(0, sim.hitFlash - dt * 1.2);
     sim.inRange = inRange;
     sim.radio = sim.radioLock && inRange;
-    sim.inView = sim.active && offAxis < HALF_FOV && distance < VISUAL_RANGE;
-
-    let panGoal = 75 * Math.sin(sim.clock * 0.35);
-    let tiltGoal = 22 + 12 * Math.sin(sim.clock * 0.21);
-    const track = () => { panGoal = azimuth; tiltGoal = elevation; };
+    const tracking = sim.phase === 'verify' || sim.phase === 'alert';
+    sim.inView = sim.active && offAxis < HALF_FOV && distance < (tracking ? TRACK_RANGE : DETECT_RANGE);
 
     if (sim.phase === 'idle') {
       if (sim.radio) {
         setPhase('radio');
-        log('Buscando el dron con la cámara');
-      } else if (sim.inView && kind === 'bird' && !sim.birdDiscarded) {
+        log('Alerta temprana: la cámara acelera el giro y barre todo el cielo');
+      } else if (sim.inView && !(kind === 'bird' && sim.birdDiscarded)) {
         setPhase('verify');
         log('Objeto en cámara · verificando con IA');
       }
     } else if (sim.phase === 'radio') {
-      panGoal = azimuth + 4 * Math.sin(sim.clock * 1.3);
-      tiltGoal = 32 + 27 * Math.sin(sim.clock * 1.2);
       if (!sim.radio) {
         setPhase('idle');
-        log('Señal de radio perdida');
+        log('Señal de radio perdida · vuelve la patrulla normal');
       } else if (sim.inView) {
         setPhase('verify');
         log('Objeto en cámara · verificando con IA');
       }
     } else if (sim.phase === 'verify') {
-      track();
       sim.lostTime = sim.inView ? 0 : sim.lostTime + dt;
       if (sim.lostTime > 0.6) {
         setPhase(sim.radio ? 'radio' : 'idle');
@@ -331,31 +264,42 @@ export function init() {
         }
       }
     } else if (sim.phase === 'alert') {
-      track();
       sim.record.seconds += dt;
       sim.record.maxElevation = Math.max(sim.record.maxElevation, elevation);
       sim.lostTime = sim.inView ? 0 : sim.lostTime + dt;
       if (!sim.active || sim.lostTime > LOST_SECONDS) {
-        const outOfReach = Math.abs(azimuth) > PAN_LIMIT_DEG + HALF_FOV;
-        finishRecord(outOfReach ? 'salió del rango de giro ±90°' : 'objetivo fuera de vista');
+        finishRecord(sim.active ? 'objetivo fuera de alcance' : 'salió del área');
         setPhase(sim.radio ? 'radio' : 'idle');
       }
     } else if (sim.phase === 'bird' && sim.phaseTime > 2.5) {
       setPhase('idle');
     }
 
-    panGoal = clamp(panGoal, -PAN_LIMIT_DEG, PAN_LIMIT_DEG);
-    tiltGoal = clamp(tiltGoal, TILT_MIN_DEG, TILT_MAX_DEG);
-    sim.pan = approach(sim.pan, panGoal, PAN_RATE, dt);
-    sim.tilt = approach(sim.tilt, tiltGoal, TILT_RATE, dt);
-    const tracking = sim.phase === 'verify' || sim.phase === 'alert';
-    sim.zoom += ((tracking ? clamp(distance / 15, 1, MAX_ZOOM) : 1) - sim.zoom) * Math.min(1, dt * 3);
+    const previousPan = sim.pan;
+    let tiltGoal;
+    if (sim.phase === 'verify' || sim.phase === 'alert') {
+      sim.spin = 0;
+      sim.pan += clamp(wrap180(azimuth - sim.pan), -PAN_RATE * dt, PAN_RATE * dt);
+      tiltGoal = elevation;
+    } else {
+      const searching = sim.phase === 'radio';
+      sim.spin = approach(sim.spin, searching ? SEARCH_RATE : PATROL_RATE, SPIN_ACCEL, dt);
+      sim.pan += sim.spin * dt;
+      tiltGoal = searching
+        ? SEARCH_TILT[0] + (SEARCH_TILT[1] - SEARCH_TILT[0]) * triangle(sim.phaseTime / SEARCH_SWEEP_SECONDS)
+        : 15 + 5 * Math.sin(sim.clock * 0.5);
+    }
+    sim.pan = wrap180(sim.pan);
+    sim.panSpeed += (Math.abs(wrap180(sim.pan - previousPan)) / dt - sim.panSpeed) * Math.min(1, dt * 4);
+    sim.tilt = approach(sim.tilt, clamp(tiltGoal, TILT_MIN_DEG, TILT_MAX_DEG), TILT_RATE, dt);
+    const zoomed = sim.phase === 'verify' || sim.phase === 'alert';
+    sim.zoom += ((zoomed ? clamp(distance / 15, 1, MAX_ZOOM) : 1) - sim.zoom) * Math.min(1, dt * 3);
     return { distance, azimuth };
   };
 
   const BANNERS = {
-    idle: ['idle', 'Patrullando el cielo'],
-    radio: ['radio', 'Radio 2.4 GHz: señal de dron · buscando con la cámara'],
+    idle: ['idle', 'Patrullando el cielo · giro 360°'],
+    radio: ['radio', 'Alerta temprana · barrido rápido'],
     verify: ['verify', 'Verificando con IA…'],
     alert: ['alert', 'ALERTA: dron · grabando incidente'],
     bird: ['bird', 'Ave identificada · ignorada, sin alerta'],
@@ -370,10 +314,10 @@ export function init() {
       $('sbt').textContent = text;
     }
     $('sbtime').textContent = sim.record ? `REC ${mmss(sim.record.seconds)}` : '';
-    $('rPan').textContent = `${Math.round(sim.pan)}°`;
+    $('rPan').textContent = `${Math.round((sim.pan + 360) % 360)}°`;
     $('rTilt').textContent = `${Math.round(sim.tilt)}°`;
-    $('rZoom').textContent = `${sim.zoom.toFixed(1)}×`;
-    $('rRadio').textContent = sim.radio ? 'Identificada' : sim.inRange ? 'En rango' : 'Sin señal';
+    $('rSpeed').textContent = `${Math.round(sim.panSpeed)}°/s`;
+    $('rRadio').textContent = sim.radio ? 'Detectada' : sim.inRange ? 'En rango' : 'Sin señal';
     $('rDist').textContent = sim.active ? `${Math.round(distance)} m` : '—';
     $('rRec').textContent = sim.record ? mmss(sim.record.seconds) : '—';
     $('pipl').textContent = `Cámara Scout · 16 mm · zoom ${sim.zoom.toFixed(1)}×`;
@@ -410,8 +354,6 @@ export function init() {
     g.clearRect(0, 0, s, s);
     g.fillStyle = '#0e1011';
     g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,.05)';
-    g.beginPath(); g.moveTo(c, c); g.arc(c, c, r, -Math.PI / 2 + rad(PAN_LIMIT_DEG + HALF_FOV), -Math.PI / 2 - rad(PAN_LIMIT_DEG + HALF_FOV)); g.fill();
     g.strokeStyle = 'rgba(255,255,255,.16)';
     g.lineWidth = 2;
     g.font = '400 20px "DM Mono", monospace';
@@ -420,13 +362,20 @@ export function init() {
       g.beginPath(); g.arc(c, c, (ring / RADAR_RANGE) * r, 0, Math.PI * 2); g.stroke();
       g.fillText(`${ring} m`, c + 8, c + (ring / RADAR_RANGE) * r - 8);
     }
+    // La radio no da dirección: al detectar, se enciende todo su alcance, no un punto.
     const radioRadius = (RADIO_RANGE / RADAR_RANGE) * r;
-    g.setLineDash([10, 8]);
-    g.strokeStyle = 'rgba(255,69,58,.55)';
+    if (sim.radio) {
+      g.fillStyle = `rgba(255,69,58,${0.07 + 0.05 * Math.sin(sim.clock * 5)})`;
+      g.beginPath(); g.arc(c, c, radioRadius, 0, Math.PI * 2); g.fill();
+    }
+    g.setLineDash(sim.radio ? [] : [10, 8]);
+    g.strokeStyle = sim.radio ? 'rgba(255,69,58,.9)' : 'rgba(255,69,58,.55)';
+    g.lineWidth = 2 + 8 * sim.hitFlash;
     g.beginPath(); g.arc(c, c, radioRadius, 0, Math.PI * 2); g.stroke();
     g.setLineDash([]);
+    g.lineWidth = 2;
     g.fillStyle = 'rgba(255,120,110,.8)';
-    g.fillText('radio', c - radioRadius + 10, c - 8);
+    g.fillText(sim.radio ? 'radio · señal' : 'radio', c - radioRadius + 10, c - 8);
     const front = sim.pulseFront / RADIO_RANGE;
     g.strokeStyle = `rgba(92,214,255,${0.85 * (1 - front)})`;
     g.lineWidth = 4;
@@ -451,18 +400,6 @@ export function init() {
       const colors = { alert: '#ff453a', verify: '#f5a524', bird: '#34c759' };
       g.fillStyle = colors[sim.phase] || (SCENARIOS[sim.key].kind === 'bird' ? '#9aa3ad' : '#ffffff');
       g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill();
-      if (sim.radio) {
-        g.strokeStyle = '#ff453a';
-        g.lineWidth = 3;
-        g.beginPath(); g.arc(x, y, 17, 0, Math.PI * 2); g.stroke();
-        g.fillStyle = '#ff6b61';
-        g.fillText('2.4 GHz', x + 22, y + 6);
-      }
-      if (sim.hitFlash > 0) {
-        g.strokeStyle = `rgba(255,69,58,${sim.hitFlash})`;
-        g.lineWidth = 4;
-        g.beginPath(); g.arc(x, y, 17 + (1 - sim.hitFlash) * 40, 0, Math.PI * 2); g.stroke();
-      }
     }
     g.fillStyle = '#5cd6ff';
     g.beginPath(); g.arc(c, c, 10, 0, Math.PI * 2); g.fill();
@@ -537,7 +474,7 @@ export function init() {
       g.textAlign = 'right';
       g.fillText('Enlace del dron (saltos de frecuencia)', w - 16, 30);
     }
-    const note = sim.radio ? `Enlace del dron identificado a ${Math.round(distance)} m · se marca en rojo.`
+    const note = sim.radio ? 'Enlace del dron detectado (en rojo). La radio no indica la dirección: la cámara lo busca.'
       : sim.inRange ? 'Señal en rango: el barrido la identificará en un instante.'
       : 'Barrido de escucha: busca el enlace de control del dron hasta 150 m.';
     if (note !== noteText) {
@@ -547,10 +484,6 @@ export function init() {
   };
 
   const followCamera = (world, dt) => {
-    if (sim.mode === 'free') {
-      controls.update();
-      return;
-    }
     const toward = sim.active ? world.clone().sub(eye).normalize() : scout.localToWorld(vec(0, SCOUT_EYE + 0.3, 1)).sub(eye).normalize();
     const flat = vec(toward.x, 0, toward.z).normalize();
     const desiredPos = eye.clone().addScaledVector(flat, -1.1).add(vec(0, 0.15, 0)).addScaledVector(vec(-flat.z, 0, flat.x), 0.35);

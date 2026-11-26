@@ -38,6 +38,8 @@
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M6.5 3h7.5l4.5 4.5V21h-12z"/><path d="M14 3v4.5h4.5M9.5 14.5l2 2 3.5-4"/></symbol>
   <symbol id="i-muted" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
   <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 19.5l1.3-3.9A8 8 0 1 1 8.4 18.7z"/></symbol>
  </defs>
 </svg>
 
@@ -88,55 +90,53 @@
   <div class="head">
    <p class="kicker">Simulador</p>
    <h2>Simula un sobrevuelo.</h2>
-   <p class="lead">Elige un escenario y mira cómo Scout escucha la radio del dron, lo busca con la cámara, lo confirma con IA y empieza a grabar. Si pasa un ave, la identifica, la ignora y sigue vigilando. La radio identifica el enlace del dron hasta 150 m; la simulación llega a 200 m.</p>
+   <p class="lead">Elige un escenario. Cuando la radio capta la señal de un dron, Scout entra en alerta temprana: la radio avisa que hay un dron cerca pero no dónde, así que la cámara acelera su giro de 360° y barre el cielo hasta encontrarlo. Después lo confirma con IA y empieza a grabar. Si pasa un ave, la identifica, la ignora y sigue vigilando.</p>
   </div>
   <div class="sim">
    <div class="simv" id="simv">
-    <div class="banner" id="sb" data-s="idle"><i></i><span id="sbt">Patrullando el cielo</span><time id="sbtime"></time></div>
+    <div class="banner" id="sb" data-s="idle"><i></i><span id="sbt">Patrullando el cielo · giro 360°</span><time id="sbtime"></time></div>
     <div class="pipf" id="pipf"><span id="pipl">Cámara Scout · 16 mm</span></div>
     <div class="tag" id="tagMain"><b></b></div>
     <div class="tag" id="tagPip"><b></b></div>
     <div class="loadbar" id="simld">Cargando simulador…</div>
-    <div class="simbar" role="group" aria-label="Cámara del simulador"><button type="button" id="camChase" aria-pressed="true">Detrás de Scout</button><button type="button" id="camFree" aria-pressed="false">Vista libre</button></div>
    </div>
    <div class="simp">
-    <div>
-     <p class="h4">Escenario</p>
-     <div class="chips" id="scen" role="group" aria-label="Escenario">
-      <button type="button" data-k="cruce" aria-pressed="true">Sobrevuelo</button>
-      <button type="button" data-k="merodeo" aria-pressed="false">Merodeo</button>
-      <button type="button" data-k="ave" aria-pressed="false">Pasa un ave</button>
-      <button type="button" data-k="manual" aria-pressed="false">Manual</button>
+    <div class="sp-ctl">
+     <div>
+      <p class="h4">Escenario</p>
+      <div class="chips" id="scen" role="group" aria-label="Escenario">
+       <button type="button" data-k="cruce" aria-pressed="true">Sobrevuelo</button>
+       <button type="button" data-k="ave" aria-pressed="false">Pasa un ave</button>
+      </div>
      </div>
+     <div class="readout">
+      <div><small>Pan</small><b id="rPan">0°</b></div>
+      <div><small>Tilt</small><b id="rTilt">0°</b></div>
+      <div><small>Velocidad</small><b id="rSpeed">0°/s</b></div>
+      <div><small>Radio 2.4 GHz</small><b id="rRadio">Sin señal</b></div>
+      <div><small>Distancia</small><b id="rDist">—</b></div>
+      <div><small>Grabación</small><b id="rRec">—</b></div>
+     </div>
+     <div class="chips"><button type="button" id="simReset">Repetir escenario</button></div>
     </div>
-    <div class="manual" id="manual" hidden>
-     <div class="ctl"><label for="mAz">Dirección <output id="mAzv">0°</output></label><input id="mAz" type="range" min="-180" max="180" value="20"></div>
-     <div class="ctl"><label for="mDist">Distancia <output id="mDistv">60 m</output></label><input id="mDist" type="range" min="10" max="200" value="60"></div>
-     <div class="ctl"><label for="mAlt">Altura <output id="mAltv">40 m</output></label><input id="mAlt" type="range" min="5" max="200" value="40"></div>
-     <p class="note">También puedes tocar el radar para mover el dron.</p>
+    <div class="sp-radar">
+     <p class="h4">Radar · vista desde arriba</p>
+     <canvas class="radar" id="radar" width="640" height="640" aria-label="Radar: vista desde arriba con Scout al centro, el alcance de la radio y el campo de visión de la cámara"></canvas>
     </div>
-    <canvas class="radar" id="radar" width="640" height="640" aria-label="Radar: vista desde arriba con Scout al centro"></canvas>
-    <div>
-     <p class="h4">Espectro de radio 2.4 GHz</p>
-     <canvas class="spectrum" id="spectrum" width="800" height="300" aria-label="Histograma de señales en la banda de 2.4 GHz; la señal del dron se marca en rojo"></canvas>
+    <div class="sp-spec">
+     <div>
+      <p class="h4">Espectro de radio 2.4 GHz</p>
+      <canvas class="spectrum" id="spectrum" width="800" height="360" aria-label="Histograma de señales en la banda de 2.4 GHz; la señal del dron se marca en rojo"></canvas>
+     </div>
      <p class="note" id="specNote">Barrido de escucha: busca el enlace de control del dron hasta 150 m.</p>
     </div>
-    <div class="readout">
-     <div><small>Pan</small><b id="rPan">0°</b></div>
-     <div><small>Tilt</small><b id="rTilt">0°</b></div>
-     <div><small>Zoom digital</small><b id="rZoom">1×</b></div>
-     <div><small>Radio 2.4 GHz</small><b id="rRadio">Sin señal</b></div>
-     <div><small>Distancia</small><b id="rDist">—</b></div>
-     <div><small>Grabación</small><b id="rRec">—</b></div>
-    </div>
-    <div class="chips"><button type="button" id="simReset">Repetir escenario</button></div>
-    <div>
+    <div class="sp-log">
      <p class="h4">Eventos</p>
      <ul class="log" id="simlog" aria-live="polite"></ul>
     </div>
    </div>
   </div>
-  <p class="note">Simulación ilustrativa: distancias, tiempos y comportamiento son aproximados y no son especificaciones del equipo. El giro de la maqueta respeta el rango del prototipo (pan ±90°, tilt de −10° a +90°). El barrido de radio es pasivo: Scout escucha, no emite ni interfiere.</p>
+  <p class="note">Simulación ilustrativa: distancias, tiempos y comportamiento son aproximados y no son especificaciones del equipo. La radio detecta el enlace del dron hasta 150 m y la escena llega a 200 m. La cámara gira 360° continuos e inclina de −10° a +90°. El barrido de radio es pasivo: Scout escucha, no emite ni interfiere.</p>
  </div>
 </section>
 
@@ -149,7 +149,7 @@
   </div>
   <div class="rows">
    <article class="row"><span class="n">01</span><h3>Detecta</h3><p>Identifica la actividad de radio en 2.4 GHz de un dron cercano y la IA lo distingue de aves, aviones y hojas.</p><span class="m">2.4 GHz</span></article>
-   <article class="row"><span class="n">02</span><h3>Sigue</h3><p>La cabeza motorizada gira e inclina la cámara para mantener al dron centrado mientras esté a la vista.</p><span class="m">Pan ±90°</span></article>
+   <article class="row"><span class="n">02</span><h3>Sigue</h3><p>La cabeza motorizada gira 360° e inclina la cámara para mantener al dron centrado mientras esté a la vista.</p><span class="m">Pan 360°</span></article>
    <article class="row"><span class="n">03</span><h3>Documenta</h3><p>Graba video y capturas con fecha, hora, dirección y elevación de cada sobrevuelo.</p><span class="m">12.3 MP</span></article>
    <article class="row"><span class="n">04</span><h3>Protege</h3><p>Te avisa en el celular al instante y deja la evidencia lista para presentar ante la autoridad.</p><span class="m">Alerta + expediente</span></article>
   </div>
@@ -292,24 +292,20 @@
  </div>
 </section>
 
-<section class="band contact" id="contacto">
- <div class="wrap cbox">
-  <div class="head">
-   <p class="kicker">Contacto</p>
-   <h2>Hablemos de tu cielo.</h2>
-   <p class="lead">Estamos construyendo el primer prototipo de Scout en León, Guanajuato. Escríbenos si quieres participar en las pruebas piloto, cotizar para tu empresa o fraccionamiento, o solo saber más.</p>
+<footer class="band" id="contacto">
+ <div class="wrap foot">
+  <div class="fbrand">
+   <a class="logo" href="#top"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><b>XYRON</b><small>CAM</small></a>
+   <p>Detección de drones para casas y empresas.<br>León, Guanajuato, México · Prototipo en desarrollo.</p>
   </div>
-  <div>
-   <a class="btn big" id="contactBtn" data-contact href="#contacto">Abrir formulario de contacto<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-   <p class="pending" id="contactNote"></p>
+  <div class="fcontact">
+   <p class="kicker">Contacto · pruebas piloto y cotizaciones</p>
+   <a class="phone" href="tel:+524771327360">+52 477 132 7360</a>
+   <div class="factions">
+    <a href="tel:+524771327360"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Llamar</a>
+    <a href="https://wa.me/524771327360" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg>WhatsApp</a>
+   </div>
   </div>
- </div>
-</section>
-
-<footer class="band">
- <div class="wrap">
-  <a class="logo" href="#top"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg><b>XYRON</b><small>CAM</small></a>
-  <p>León, Guanajuato, México · Prototipo en desarrollo · <a data-contact href="#contacto">Contacto</a></p>
   <p class="fine">Escenas generadas por computadora. XYRON CAM detecta y registra; no interfiere con drones.</p>
  </div>
 </footer>

@@ -5,12 +5,14 @@ import { createScout, onModelProgress, paintRig, setExplode, aimRig } from './sc
 import { createRenderer, watchSize, runWhenVisible, prefersReducedMotion } from './renderer.js';
 
 const FLY_SECONDS = 0.9;
+const SCAN_DEG_PER_S = 40;
 const vec = (values) => new THREE.Vector3(...values);
 const ease = (x) => x * x * (3 - 2 * x);
+const wrap180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
 
 const VIEWS = {
   general: { label: 'General', cam: [-0.42, 0.26, 0.78], target: [0, 0.13, 0], pan: -15, tilt: 8, explode: 0, title: 'Diseño limpio para cualquier fachada', text: 'Cuerpo de un solo color y aro oscuro, pensada para verse bien en una azotea, no para esconderse.' },
-  movimiento: { label: 'Movimiento', cam: [-0.5, 0.32, 0.74], target: [0, 0.14, 0], scan: true, explode: 0, title: 'Gira, inclina y no lo pierde', text: 'Giro de ±90° e inclinación de −10° a +90°: puede mirar el horizonte o justo encima de tu casa mientras sigue al dron.' },
+  movimiento: { label: 'Movimiento', cam: [-0.5, 0.32, 0.74], target: [0, 0.14, 0], scan: true, explode: 0, title: 'Gira, inclina y no lo pierde', text: 'Giro continuo de 360° e inclinación de −10° a +90°: mira hacia cualquier lado, del horizonte a justo encima de tu casa, mientras sigue al dron.' },
 };
 
 // Arranco el visor 3D interactivo y regreso los controles que usa la interfaz.
@@ -109,10 +111,11 @@ export function start(container, colorIndex) {
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
     if (state.scan && !reduce) {
-      state.panGoal = 70 * Math.sin(t * 0.7);
+      state.pan = wrap180(state.pan + SCAN_DEG_PER_S * dt);
       state.tiltGoal = 30 + 25 * Math.sin(t * 0.45);
+    } else {
+      state.pan += wrap180(state.panGoal - state.pan) * 0.1;
     }
-    state.pan += (state.panGoal - state.pan) * 0.1;
     state.tilt += (state.tiltGoal - state.tilt) * 0.1;
     state.explode += (state.explodeGoal - state.explode) * 0.08;
     $('exv').textContent = `${Math.round(state.explode)} %`;
